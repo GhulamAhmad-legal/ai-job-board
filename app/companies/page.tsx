@@ -2,6 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
+// ⚡ Force dynamic server-rendering on every request
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Companies Hiring AI Talent | AIJobs",
   description: "Browse top tech companies and startups hiring remote AI talent. View open roles, salaries, and remote engineering jobs.",
@@ -13,11 +17,12 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function CompaniesIndex() {
-  // Fetch all active jobs
+  // Fetch all active jobs (up to 5,000 records)
   const { data: jobs } = await supabase
     .from('jobs')
     .select('company, company_logo_url')
-    .eq('status', 'active');
+    .eq('status', 'active')
+    .limit(5000);
 
   // Group and count jobs by company
   const companyMap = new Map();
