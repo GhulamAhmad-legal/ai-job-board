@@ -4,7 +4,6 @@ import { createClient } from '@supabase/supabase-js';
 import { useEffect, useState, useRef } from 'react';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
