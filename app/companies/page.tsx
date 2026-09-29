@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
-// ⚡ Force dynamic server-rendering on every request
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -11,26 +10,28 @@ export const metadata: Metadata = {
   description: "Browse top tech companies and startups hiring remote AI talent. View open roles, salaries, and remote engineering jobs.",
 };
 
-// Initialize Supabase
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function CompaniesIndex() {
-  // Fetch all active jobs (up to 5,000 records)
   const { data: jobs } = await supabase
     .from('jobs')
     .select('company, company_logo_url')
     .eq('status', 'active')
-    .limit(5000);
+    .limit(10000);
 
-  // Group and count jobs by company
   const companyMap = new Map();
   (jobs || []).forEach(job => {
     if (!companyMap.has(job.company)) {
+      
+      // 🧠 DYNAMIC LOGO FIX: Extract the domain and use Unavatar API instead of Clearbit
+      const domain = job.company_logo_url ? job.company_logo_url.split('/').pop() : '';
+      const reliableLogoUrl = domain ? `https://unavatar.io/${domain}` : '';
+
       companyMap.set(job.company, {
         name: job.company,
-        logoUrl: job.company_logo_url,
+        logoUrl: reliableLogoUrl,
         jobCount: 1
       });
     } else {
@@ -38,7 +39,6 @@ export default async function CompaniesIndex() {
     }
   });
 
-  // Convert to array and sort by most open roles first
   const companies = Array.from(companyMap.values()).sort((a, b) => b.jobCount - a.jobCount);
 
   return (
