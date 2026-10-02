@@ -34,11 +34,9 @@ export default function Home() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [activeJob, setActiveJob] = useState<any | null>(null);
   
-  // Search State
   const [searchTitle, setSearchTitle] = useState('');
   const [searchLocation, setSearchLocation] = useState('');
   
-  // Filter States
   const [remoteOnly, setRemoteOnly] = useState(false); 
   const [easyApplyOnly, setEasyApplyOnly] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -83,9 +81,11 @@ export default function Home() {
   };
 
   const filteredJobs = jobs.filter(job => {
+    // 🧠 UPGRADE 1: Now searches Title, Company, AND Description
     const matchesTitle = searchTitle === '' ? true : (
       job.title.toLowerCase().includes(searchTitle.toLowerCase()) || 
-      job.company.toLowerCase().includes(searchTitle.toLowerCase())
+      job.company.toLowerCase().includes(searchTitle.toLowerCase()) ||
+      (job.description && job.description.toLowerCase().includes(searchTitle.toLowerCase()))
     );
     
     const matchesLocation = searchLocation === '' ? true : (
@@ -128,7 +128,7 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col bg-[#F5F6F8] text-[#181818] font-sans">
       
-      {/* 🚀 PREMIUM HERO SECTION (Integrated with Search & Filters) */}
+      {/* PREMIUM HERO SECTION */}
       <section className="relative overflow-hidden bg-white pt-20 pb-12 lg:pt-24 lg:pb-16 border-b border-gray-200 shadow-sm z-30 shrink-0">
         <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
           <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"></div>
@@ -145,7 +145,6 @@ export default function Home() {
             Browse over 2,500+ active roles at top AI startups and enterprise tech companies. Heavily curated, remote-friendly, and updated daily.
           </p>
 
-          {/* Elevated Dual Search Bar */}
           <div className="mx-auto max-w-4xl flex flex-col md:flex-row items-center bg-white rounded-3xl md:rounded-full p-2 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200 focus-within:ring-2 focus-within:ring-indigo-600 transition-all mb-8">
             <div className="flex-1 flex items-center px-4 py-2 md:py-0 md:border-r border-gray-200 w-full group">
               <svg className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -153,7 +152,7 @@ export default function Home() {
               </svg>
               <input 
                 type="text" 
-                placeholder="Search by role, tech stack, or keywords..." 
+                placeholder="Search by role, keywords, or tech stack..." 
                 className="w-full border-none focus:ring-0 text-[15px] font-medium text-gray-900 placeholder-gray-400 ml-3 py-3 outline-none bg-transparent" 
                 value={searchTitle}
                 onChange={(e) => setSearchTitle(e.target.value)}
@@ -179,7 +178,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Unified Filters Row */}
           <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-center md:justify-start gap-3">
             <button onClick={() => setEasyApplyOnly(!easyApplyOnly)} className={`px-5 py-2 text-[13px] font-bold rounded-full border transition-all cursor-pointer ${easyApplyOnly ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400 hover:text-indigo-600 hover:shadow-sm'}`}>Easy Apply only</button>
             <button onClick={() => setRemoteOnly(!remoteOnly)} className={`px-5 py-2 text-[13px] font-bold rounded-full border transition-all cursor-pointer ${remoteOnly ? 'bg-indigo-50 text-indigo-700 border-indigo-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400 hover:text-indigo-600 hover:shadow-sm'}`}>Remote only</button>
@@ -230,6 +228,7 @@ export default function Home() {
               )}
             </div>
 
+            {/* UPGRADE 3: CREATE ALERT BUTTON LINKED TO MODAL */}
             <button onClick={() => setShowAlertModal(true)} className="ml-auto hidden md:flex items-center text-[13px] font-bold text-gray-500 hover:text-indigo-600 transition-colors cursor-pointer group">
               <svg className="w-4 h-4 mr-1.5 text-gray-400 group-hover:text-indigo-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -240,11 +239,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Main Dual-Pane Content View */}
-      <div className="flex-1 max-w-[1152px] w-full mx-auto px-4 flex gap-5 bg-[#F5F6F8] py-6 h-[800px]">
+      {/* 🧠 UPGRADE 2: NEW STICKY DUEL-PANE LAYOUT */}
+      {/* Used items-start to allow the sticky right pane to function perfectly while left pane scrolls */}
+      <div className="flex-1 max-w-[1152px] w-full mx-auto px-4 flex items-start gap-5 bg-[#F5F6F8] py-6">
         
-        {/* Left Column: Job List */}
-        <div className="w-full lg:w-[420px] flex flex-col shrink-0 overflow-hidden h-full">
+        {/* Left Column: Natural scrolling feed */}
+        <div className="w-full lg:w-[420px] flex flex-col shrink-0">
           
           <div className="mb-4 flex items-center justify-between shrink-0">
             <span className="text-[14px] font-bold text-gray-500">
@@ -282,7 +282,7 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto pr-2 pb-10 [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
+          <div className="flex flex-col pb-10">
             {filteredJobs.length === 0 ? (
               <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center shadow-sm">
                  <span className="text-indigo-400 text-4xl mb-3 block">🔍</span>
@@ -298,7 +298,6 @@ export default function Home() {
                 const mockRating = 3.0 + (job.company.length % 3);
 
                 return (
-                  // 🚀 UPGRADE 2: INTERACTIVE JOB CARDS
                   <div 
                     key={job.id} 
                     onClick={() => handleJobClick(job)}
@@ -312,7 +311,6 @@ export default function Home() {
                       <div className="flex items-center gap-3">
                         <div className="w-[36px] h-[36px] border border-gray-200 rounded-lg flex items-center justify-center bg-white shadow-sm overflow-hidden text-gray-900 font-black text-[12px]">
                           {job.company_logo_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
                             <img 
                               src={job.company_logo_url} 
                               alt={job.company} 
@@ -349,7 +347,6 @@ export default function Home() {
                       {job.title}
                     </h2>
                     
-                    {/* 🚀 UPGRADE 3: MODERN PILL BADGES (Feed Cards) */}
                     <div className="flex flex-wrap items-center gap-2 mt-auto">
                       <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 border border-indigo-200 truncate max-w-full">
                         {job.location.split(';')[0]}
@@ -365,11 +362,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Right Column wrapper */}
-        <div className="hidden lg:block flex-1 min-w-0 relative h-full">
+        {/* Right Column: Sticky to viewport */}
+        <div className="hidden lg:block flex-1 min-w-0 sticky top-6 h-[calc(100vh-48px)]">
           <div 
             ref={descriptionScrollRef} 
-            className="absolute inset-0 overflow-y-auto pr-2 pb-10 [&::-webkit-scrollbar]:w-[8px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
+            className="h-full overflow-y-auto pr-2 pb-10 [&::-webkit-scrollbar]:w-[8px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
           >
             {activeJob ? (
               <div className="bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col min-h-full transition-all duration-300 animate-in fade-in slide-in-from-bottom-4">
@@ -379,7 +376,6 @@ export default function Home() {
                     <div className="flex items-center gap-3">
                       <div className="w-[48px] h-[48px] border border-gray-200 rounded-xl flex items-center justify-center bg-white shadow-sm overflow-hidden text-gray-900 font-black text-[16px]">
                         {activeJob.company_logo_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
                           <img 
                             src={activeJob.company_logo_url} 
                             alt={activeJob.company} 
@@ -407,7 +403,6 @@ export default function Home() {
                     {activeJob.title}
                   </h1>
 
-                  {/* 🚀 UPGRADE 3: MODERN PILL BADGES (Detail View) */}
                   <div className="flex flex-wrap items-center gap-2.5 mb-8">
                     <span className="inline-flex items-center bg-amber-50 text-amber-800 px-3.5 py-1.5 rounded-full text-[13px] font-bold border border-amber-200 shadow-sm">
                       <span className="mr-1.5 text-amber-500 text-sm">🏆</span> Best Places to Work
@@ -416,7 +411,8 @@ export default function Home() {
                       {activeJob.location.split(';')[0]}
                     </span>
                     <span className="inline-flex items-center bg-emerald-50 text-emerald-800 px-3.5 py-1.5 rounded-full text-[13px] font-bold border border-emerald-200 shadow-sm">
-${activeJob.salary_min || 100}K – ${activeJob.salary_max || 150}K <span className="font-medium opacity-70 ml-1">/yr</span>                    </span>
+                      ${activeJob.salary_min \vert{}\vert{} 100}K –${activeJob.salary_max || 150}K <span className="font-medium opacity-70 ml-1">/yr</span>
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -457,6 +453,55 @@ ${activeJob.salary_min || 100}K – ${activeJob.salary_max || 150}K <span classN
         </div>
 
       </div>
+
+      {/* 🧠 UPGRADE 3: JOB ALERT MODAL UI COMPONENT */}
+      {showAlertModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative border border-gray-100">
+            <button 
+              onClick={() => setShowAlertModal(false)} 
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-900 transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-1.5"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="p-8">
+              <div className="w-14 h-14 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                <svg className="w-7 h-7 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </div>
+              <h2 className="text-[22px] font-extrabold text-gray-900 mb-2 tracking-tight">Never miss a role</h2>
+              <p className="text-gray-500 text-[15px] mb-7 font-medium">Get personalized AI job alerts sent directly to your inbox the moment they are posted.</p>
+              
+              {alertSubmitted ? (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex items-start gap-3">
+                  <span className="text-emerald-600 mt-0.5 text-lg">✓</span>
+                  <p className="text-[14px] text-emerald-800 font-bold leading-snug">Success! We will email you when new roles match your criteria.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  <input 
+                    type="email" 
+                    placeholder="Enter your email address" 
+                    className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all font-medium text-[15px]"
+                    value={alertEmail}
+                    onChange={(e) => setAlertEmail(e.target.value)}
+                  />
+                  <button 
+                    onClick={() => setAlertSubmitted(true)}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-4 rounded-2xl transition-all shadow-md hover:shadow-lg"
+                  >
+                    Create Alert
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }
