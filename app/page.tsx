@@ -126,10 +126,10 @@ export default function Home() {
   const salary = activeJob ? getEstimatedSalary(activeJob.title) : { min: 120, max: 180, median: 150 };
 
   return (
-    <main className="min-h-screen flex flex-col bg-[#F5F6F8] text-[#181818] font-sans">
-      
-      {/* PREMIUM HERO SECTION */}
-      <section className="relative overflow-hidden bg-white pt-20 pb-12 lg:pt-24 lg:pb-16 border-b border-gray-200 shadow-sm z-30 shrink-0">
+    <main className="min-h-screen flex flex-col bg-[#F5F6F8] text-[#181818] font-sans overflow-x-hidden">
+  
+  {/* PREMIUM HERO SECTION */}
+  <section className="relative bg-white pt-20 pb-12 lg:pt-24 lg:pb-16 border-b border-gray-200 shadow-sm z-[100] shrink-0 overflow-visible">
         <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
           <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"></div>
         </div>
