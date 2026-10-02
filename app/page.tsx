@@ -411,8 +411,7 @@ export default function Home() {
                       {activeJob.location.split(';')[0]}
                     </span>
                     <span className="inline-flex items-center bg-emerald-50 text-emerald-800 px-3.5 py-1.5 rounded-full text-[13px] font-bold border border-emerald-200 shadow-sm">
-                      ${activeJob.salary_min \vert{}\vert{} 100}K –${activeJob.salary_max || 150}K <span className="font-medium opacity-70 ml-1">/yr</span>
-                    </span>
+${activeJob.salary_min || 100}K – ${activeJob.salary_max || 150}K <span className="font-medium opacity-70 ml-1">/yr</span>                    </span>
                   </div>
 
                   <div className="flex items-center gap-3">
