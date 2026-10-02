@@ -126,7 +126,7 @@ export default function Home() {
   const salary = activeJob ? getEstimatedSalary(activeJob.title) : { min: 120, max: 180, median: 150 };
 
   return (
-    <main className="min-h-screen flex flex-col bg-[#F5F6F8] text-[#181818] font-sans overflow-x-hidden">
+    <main className="min-h-screen flex flex-col bg-[#F5F6F8] text-[#181818] font-sans w-full">
   
   {/* PREMIUM HERO SECTION */}
   <section className="relative bg-white pt-20 pb-12 lg:pt-24 lg:pb-16 border-b border-gray-200 shadow-sm z-[100] shrink-0 overflow-visible">
