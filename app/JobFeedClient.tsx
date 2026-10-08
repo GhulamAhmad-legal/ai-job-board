@@ -225,9 +225,9 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
                    <span className="bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-gray-200">
                      {activeJob.location.split(';')[0]}
                    </span>
-                   <span className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-emerald-200">
-                     ${activeJob.salary_min \vert{}\vert{} 100}K –${activeJob.salary_max || 150}K <span className="font-medium opacity-80">/yr</span>
-                   </span>
+<span className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-emerald-200">
+  ${activeJob.salary_min || 100}K – ${activeJob.salary_max || 150}K <span className="font-medium opacity-80">/yr</span>
+</span>
                  </div>
 
                  {/* Apply Button */}
