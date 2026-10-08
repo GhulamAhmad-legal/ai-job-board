@@ -6,7 +6,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'http://localhost:3000'; // Change to your live domain later (e.g., https://aijobs.com)
+  const baseUrl = 'https://ai-job-board-bice.vercel.app'; // Change to your live domain later (e.g., https://aijobs.com)
 
   // 1. Fetch all active jobs
   const { data: jobs } = await supabase
