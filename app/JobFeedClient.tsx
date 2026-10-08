@@ -1,6 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase for client-side pagination fetching
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 function decodeHtml(html: string) {
   if (!html) return '';
@@ -21,8 +27,8 @@ interface Props {
 }
 
 export default function JobFeedClient({ initialJobs, totalCount }: Props) {
-  // 🧠 Initialize state DIRECTLY with the server-rendered jobs! No loading time!
-  const [jobs] = useState<any[]>(initialJobs);
+  // 🧠 State initialized DIRECTLY with server-rendered jobs
+  const [jobs, setJobs] = useState<any[]>(initialJobs);
   const [activeJob, setActiveJob] = useState<any | null>(initialJobs[0] || null);
   
   const [searchTitle, setSearchTitle] = useState('');
@@ -39,6 +45,10 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
   const [alertEmail, setAlertEmail] = useState('');
   const [alertSubmitted, setAlertSubmitted] = useState(false);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const descriptionScrollRef = useRef<HTMLDivElement>(null);
 
   const handleJobClick = (job: any) => {
@@ -51,6 +61,26 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
   const toggleSaveJob = (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
     setSavedJobIds(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
+  };
+
+  // 🧠 Load More Logic
+  const loadMoreJobs = async () => {
+    setIsLoadingMore(true);
+    const from = page * 150;
+    const to = from + 150 - 1;
+
+    const { data } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (data && data.length > 0) {
+      setJobs(prevJobs => [...prevJobs, ...data]);
+      setPage(prevPage => prevPage + 1);
+    }
+    setIsLoadingMore(false);
   };
 
   const filteredJobs = jobs.filter(job => {
@@ -108,8 +138,6 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
             <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-8 rounded-full shadow-md w-full md:w-auto">Search Jobs</button>
           </div>
           
-          {/* Include your exact filter buttons below here (easyApply, remote, dropdowns) */}
-          {/* Include your exact filter buttons below here (easyApply, remote, dropdowns) */}
           <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-3">
              <div className="flex flex-wrap items-center gap-3">
                <button onClick={() => setEasyApplyOnly(!easyApplyOnly)} className={`px-5 py-2 text-[13px] font-bold rounded-full border transition-all ${easyApplyOnly ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-300'}`}>Easy Apply only</button>
@@ -131,18 +159,18 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
         {/* Left Column Feed */}
         <div className="w-full lg:w-[420px] flex flex-col shrink-0">
           <div className="mb-4 flex items-center justify-between shrink-0">
-<span className="text-[14px] font-bold text-gray-500">
-  {filteredJobs.length === jobs.length 
-    ? `Showing newest ${jobs.length} of ${totalCount.toLocaleString()} roles` 
-    : `${filteredJobs.length} roles found`}
-</span>
+            <span className="text-[14px] font-bold text-gray-500">
+              {filteredJobs.length === jobs.length 
+                ? `Showing newest ${jobs.length} of ${totalCount.toLocaleString()} roles` 
+                : `${filteredJobs.length} roles found`}
+            </span>
           </div>
           
-          <div className="flex flex-col pb-10">
+          <div className="flex flex-col pb-6">
             {filteredJobs.map((job) => (
               <div key={job.id} onClick={() => handleJobClick(job)} className={`p-5 mb-4 cursor-pointer border rounded-2xl ${activeJob?.id === job.id ? 'bg-indigo-50/50 border-indigo-300 shadow-md border-l-4 border-l-indigo-600' : 'bg-white border-gray-200 hover:shadow-xl hover:border-indigo-500'}`}>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-[36px] h-[36px] border border-gray-200 rounded-lg flex items-center justify-center font-black text-[12px]">
+                  <div className="w-[36px] h-[36px] border border-gray-200 rounded-lg flex items-center justify-center font-black text-[12px] overflow-hidden bg-white">
                     {job.company_logo_url ? <img src={job.company_logo_url} className="w-full h-full object-contain p-0.5" alt={job.company} /> : job.company.slice(0, 2).toUpperCase()}
                   </div>
                   <span className="text-[14px] font-bold text-gray-900">{job.company}</span>
@@ -150,13 +178,9 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
                 <h2 className="text-[17px] font-extrabold mb-3 text-gray-900">{job.title}</h2>
                 <div className="flex gap-2">
                   <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 border border-indigo-200 truncate">{job.location.split(';')[0]}</span>
-<span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200">${job.salary_min || 100}K – ${job.salary_max || 150}K</span>                </div>
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200">${job.salary_min \vert{}\vert{} 100}K –${job.salary_max || 150}K</span>
+                </div>
               </div>
-            ))}
-          </div>
-          <div className="flex flex-col pb-6">
-            {filteredJobs.map((job) => (
-              // ... your existing job card code ...
             ))}
           </div>
 
@@ -180,44 +204,45 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
             {activeJob && (
               <div className="bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col">
                <div className="px-8 py-8 border-b border-gray-100 bg-white rounded-t-2xl">
-                  {/* Logo and Company Name */}
-                  <div className="flex items-center gap-4 mb-5">
-                    <div className="w-[56px] h-[56px] border border-gray-200 rounded-xl flex items-center justify-center font-black text-[16px] overflow-hidden bg-white shadow-sm">
-                      {activeJob.company_logo_url ? (
-                        <img src={activeJob.company_logo_url} className="w-full h-full object-contain p-1" alt={activeJob.company} />
-                      ) : (
-                        activeJob.company.slice(0, 2).toUpperCase()
-                      )}
-                    </div>
-                    <span className="text-[20px] font-bold text-gray-900">{activeJob.company}</span>
-                  </div>
+                 {/* Logo and Company Name */}
+                 <div className="flex items-center gap-4 mb-5">
+                   <div className="w-[56px] h-[56px] border border-gray-200 rounded-xl flex items-center justify-center font-black text-[16px] overflow-hidden bg-white shadow-sm">
+                     {activeJob.company_logo_url ? (
+                       <img src={activeJob.company_logo_url} className="w-full h-full object-contain p-1" alt={activeJob.company} />
+                     ) : (
+                       activeJob.company.slice(0, 2).toUpperCase()
+                     )}
+                   </div>
+                   <span className="text-[20px] font-bold text-gray-900">{activeJob.company}</span>
+                 </div>
 
-                  {/* Job Title */}
-                  <h1 className="text-[28px] md:text-[32px] font-extrabold text-gray-900 mb-5 leading-tight tracking-tight">
-                    {activeJob.title}
-                  </h1>
+                 {/* Job Title */}
+                 <h1 className="text-[28px] md:text-[32px] font-extrabold text-gray-900 mb-5 leading-tight tracking-tight">
+                   {activeJob.title}
+                 </h1>
 
-                  {/* Location and Salary Pills */}
-                  <div className="flex flex-wrap items-center gap-3 mb-8">
-                    <span className="bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-gray-200">
-                      {activeJob.location.split(';')[0]}
-                    </span>
-                    <span className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-emerald-200">
-                      ${activeJob.salary_min || 100}K – ${activeJob.salary_max || 150}K <span className="font-medium opacity-80">/yr</span>
-                    </span>
-                  </div>
+                 {/* Location and Salary Pills */}
+                 <div className="flex flex-wrap items-center gap-3 mb-8">
+                   <span className="bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-gray-200">
+                     {activeJob.location.split(';')[0]}
+                   </span>
+                   <span className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-emerald-200">
+                     ${activeJob.salary_min \vert{}\vert{} 100}K –${activeJob.salary_max || 150}K <span className="font-medium opacity-80">/yr</span>
+                   </span>
+                 </div>
 
-                  {/* Apply Button */}
-                  <a href={activeJob.apply_url} target="_blank" rel="noopener noreferrer" className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[15px] px-8 py-3.5 rounded-xl shadow-sm transition-all hover:-translate-y-0.5">
-                    Apply on employer site
-                  </a>
-                </div>
-                <div className="p-8 pb-16 prose max-w-none" dangerouslySetInnerHTML={{ __html: decodeHtml(activeJob.description) }} />
+                 {/* Apply Button */}
+                 <a href={activeJob.apply_url} target="_blank" rel="noopener noreferrer" className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[15px] px-8 py-3.5 rounded-xl shadow-sm transition-all hover:-translate-y-0.5">
+                   Apply on employer site
+                 </a>
+               </div>
+               <div className="p-8 pb-16 prose max-w-none" dangerouslySetInnerHTML={{ __html: decodeHtml(activeJob.description) }} />
               </div>
             )}
           </div>
         </div>
       </div>
+
       {/* Job Alert Modal */}
       {showAlertModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
