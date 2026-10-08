@@ -135,8 +135,7 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
                 <h2 className="text-[17px] font-extrabold mb-3 text-gray-900">{job.title}</h2>
                 <div className="flex gap-2">
                   <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 border border-indigo-200 truncate">{job.location.split(';')[0]}</span>
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200">${job.salary_min \vert{}\vert{} 100}K –${job.salary_max || 150}K</span>
-                </div>
+<span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200">${job.salary_min || 100}K – ${job.salary_max || 150}K</span>                </div>
               </div>
             ))}
           </div>
