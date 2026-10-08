@@ -109,9 +109,20 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
           </div>
           
           {/* Include your exact filter buttons below here (easyApply, remote, dropdowns) */}
-          <div className="max-w-4xl mx-auto flex flex-wrap items-center gap-3">
-             <button onClick={() => setEasyApplyOnly(!easyApplyOnly)} className={`px-5 py-2 text-[13px] font-bold rounded-full border transition-all ${easyApplyOnly ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-300'}`}>Easy Apply only</button>
-             <button onClick={() => setRemoteOnly(!remoteOnly)} className={`px-5 py-2 text-[13px] font-bold rounded-full border transition-all ${remoteOnly ? 'bg-indigo-50 text-indigo-700 border-indigo-500' : 'bg-white text-gray-600 border-gray-300'}`}>Remote only</button>
+          {/* Include your exact filter buttons below here (easyApply, remote, dropdowns) */}
+          <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-3">
+             <div className="flex flex-wrap items-center gap-3">
+               <button onClick={() => setEasyApplyOnly(!easyApplyOnly)} className={`px-5 py-2 text-[13px] font-bold rounded-full border transition-all ${easyApplyOnly ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-300'}`}>Easy Apply only</button>
+               <button onClick={() => setRemoteOnly(!remoteOnly)} className={`px-5 py-2 text-[13px] font-bold rounded-full border transition-all ${remoteOnly ? 'bg-indigo-50 text-indigo-700 border-indigo-500' : 'bg-white text-gray-600 border-gray-300'}`}>Remote only</button>
+             </div>
+             
+             {/* Job Alert Button */}
+             <button onClick={() => setShowAlertModal(true)} className="flex items-center gap-2 text-indigo-600 font-bold text-[14px] hover:text-indigo-800 transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                Create Job Alert
+             </button>
           </div>
         </div>
       </section>
@@ -143,6 +154,24 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
               </div>
             ))}
           </div>
+          <div className="flex flex-col pb-6">
+            {filteredJobs.map((job) => (
+              // ... your existing job card code ...
+            ))}
+          </div>
+
+          {/* Load More Button */}
+          {jobs.length < totalCount && (
+            <div className="pb-10 flex justify-center">
+              <button 
+                onClick={loadMoreJobs} 
+                disabled={isLoadingMore}
+                className="bg-white border border-gray-200 text-gray-700 hover:text-indigo-600 hover:border-indigo-600 font-bold py-3 px-8 rounded-xl shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoadingMore ? 'Loading...' : 'Load More Jobs'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right Column Sticky Details */}
@@ -150,9 +179,38 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
           <div ref={descriptionScrollRef} className="h-full overflow-y-auto pr-2 pb-10">
             {activeJob && (
               <div className="bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col">
-                <div className="px-8 py-8 border-b border-gray-100">
-                  <h1 className="text-[28px] font-extrabold text-gray-900 mb-5">{activeJob.title}</h1>
-                  <a href={activeJob.apply_url} target="_blank" rel="noopener noreferrer" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[15px] px-8 py-3.5 rounded-xl shadow-md">Apply on employer site</a>
+               <div className="px-8 py-8 border-b border-gray-100 bg-white rounded-t-2xl">
+                  {/* Logo and Company Name */}
+                  <div className="flex items-center gap-4 mb-5">
+                    <div className="w-[56px] h-[56px] border border-gray-200 rounded-xl flex items-center justify-center font-black text-[16px] overflow-hidden bg-white shadow-sm">
+                      {activeJob.company_logo_url ? (
+                        <img src={activeJob.company_logo_url} className="w-full h-full object-contain p-1" alt={activeJob.company} />
+                      ) : (
+                        activeJob.company.slice(0, 2).toUpperCase()
+                      )}
+                    </div>
+                    <span className="text-[20px] font-bold text-gray-900">{activeJob.company}</span>
+                  </div>
+
+                  {/* Job Title */}
+                  <h1 className="text-[28px] md:text-[32px] font-extrabold text-gray-900 mb-5 leading-tight tracking-tight">
+                    {activeJob.title}
+                  </h1>
+
+                  {/* Location and Salary Pills */}
+                  <div className="flex flex-wrap items-center gap-3 mb-8">
+                    <span className="bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-gray-200">
+                      {activeJob.location.split(';')[0]}
+                    </span>
+                    <span className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-emerald-200">
+                      ${activeJob.salary_min || 100}K – ${activeJob.salary_max || 150}K <span className="font-medium opacity-80">/yr</span>
+                    </span>
+                  </div>
+
+                  {/* Apply Button */}
+                  <a href={activeJob.apply_url} target="_blank" rel="noopener noreferrer" className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[15px] px-8 py-3.5 rounded-xl shadow-sm transition-all hover:-translate-y-0.5">
+                    Apply on employer site
+                  </a>
                 </div>
                 <div className="p-8 pb-16 prose max-w-none" dangerouslySetInnerHTML={{ __html: decodeHtml(activeJob.description) }} />
               </div>
@@ -160,6 +218,54 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
           </div>
         </div>
       </div>
+      {/* Job Alert Modal */}
+      {showAlertModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative">
+            <button onClick={() => { setShowAlertModal(false); setAlertSubmitted(false); }} className="absolute top-5 right-5 text-gray-400 hover:text-gray-600">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            {!alertSubmitted ? (
+              <>
+                <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-5">
+                  <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-extrabold text-gray-900 mb-2">Never miss a role</h3>
+                <p className="text-gray-500 mb-6 text-[15px]">Get weekly emails with the latest AI and remote tech jobs matching your search.</p>
+                
+                <form onSubmit={(e) => { e.preventDefault(); setAlertSubmitted(true); }} className="flex flex-col gap-4">
+                  <input 
+                    type="email" 
+                    required 
+                    placeholder="Enter your email address" 
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 outline-none transition-all text-[15px]"
+                    value={alertEmail}
+                    onChange={(e) => setAlertEmail(e.target.value)}
+                  />
+                  <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-md transition-all">
+                    Subscribe to Alerts
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div className="text-center py-6">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                  <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-extrabold text-gray-900 mb-2">You're all set!</h3>
+                <p className="text-gray-500 text-[15px]">We'll send the best AI roles straight to <strong>{alertEmail}</strong>.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
