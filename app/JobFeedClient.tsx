@@ -120,7 +120,11 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
         {/* Left Column Feed */}
         <div className="w-full lg:w-[420px] flex flex-col shrink-0">
           <div className="mb-4 flex items-center justify-between shrink-0">
-            <span className="text-[14px] font-bold text-gray-500">{filteredJobs.length} active roles</span>
+<span className="text-[14px] font-bold text-gray-500">
+  {filteredJobs.length === jobs.length 
+    ? `Showing newest ${jobs.length} of ${totalCount.toLocaleString()} roles` 
+    : `${filteredJobs.length} roles found`}
+</span>
           </div>
           
           <div className="flex flex-col pb-10">
