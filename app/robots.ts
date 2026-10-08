@@ -1,12 +1,13 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ai-job-board-bice.vercel.app';
+
   return {
     rules: {
       userAgent: '*',
       allow: '/',
     },
-    // Don't forget to update this URL once you buy your real domain!
-    sitemap: 'http://localhost:3000/sitemap.xml', 
+    sitemap: `${baseUrl}/sitemap.xml`, 
   };
 }
