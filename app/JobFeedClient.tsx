@@ -1,24 +1,25 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { useState, useRef } from 'react';
+import Link from 'next/link';
 
-// Initialize Supabase for client-side pagination fetching
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const PAGE_SIZE = 150;
 
-function decodeHtml(html: string) {
-  if (!html) return '';
-  return html.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&rsquo;/g, "'").replace(/&lsquo;/g, "'").replace(/&nbsp;/g, ' ');
+// Salary is only shown when real values exist (stored in thousands).
+function hasSalary(job: any) {
+  return (
+    typeof job.salary_min === 'number' &&
+    typeof job.salary_max === 'number' &&
+    job.salary_min > 0 &&
+    job.salary_max >= job.salary_min
+  );
 }
 
-function getEstimatedSalary(title: string) {
-  const lower = title.toLowerCase();
-  if (lower.includes('fellow') || lower.includes('intern')) return { min: 90, max: 130, median: 110 };
-  if (lower.includes('lead') || lower.includes('director') || lower.includes('manager')) return { min: 180, max: 275, median: 220 };
-  if (lower.includes('research') || lower.includes('scientist') || lower.includes('security')) return { min: 160, max: 245, median: 195 };
-  return { min: 130, max: 195, median: 160 };
+// "Remote - United States" / "Remote, US" are fully remote.
+// "Remote-Friendly (Travel-Required) | ..." is not.
+function isFullyRemote(job: any) {
+  if (Array.isArray(job.tags) && job.tags.includes('Remote')) return true;
+  return /^remote(\s+-\s+|\s*,\s*)/i.test(job.location ?? '');
 }
 
 interface Props {
@@ -45,9 +46,10 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
   const [alertEmail, setAlertEmail] = useState('');
   const [alertSubmitted, setAlertSubmitted] = useState(false);
 
-  // Pagination State
-  const [page, setPage] = useState(1);
+  // Pagination State (page 0 = newest 150; duplicates of the first screen are skipped)
+  const [page, setPage] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
   const descriptionScrollRef = useRef<HTMLDivElement>(null);
 
@@ -63,22 +65,22 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
     setSavedJobIds(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
   };
 
-  // 🧠 Load More Logic
+  // 🧠 Load More Logic (via /api/jobs, which returns sanitized descriptions)
   const loadMoreJobs = async () => {
     setIsLoadingMore(true);
-    const from = page * 150;
-    const to = from + 150 - 1;
+    try {
+      const res = await fetch(`/api/jobs?page=${page}`);
+      if (!res.ok) throw new Error('Failed to load jobs');
+      const { jobs: more = [] } = await res.json();
 
-    const { data } = await supabase
-      .from('jobs')
-      .select('*')
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .range(from, to);
-
-    if (data && data.length > 0) {
-      setJobs(prevJobs => [...prevJobs, ...data]);
-      setPage(prevPage => prevPage + 1);
+      setJobs(prev => {
+        const seen = new Set(prev.map((j: any) => j.id));
+        return [...prev, ...more.filter((j: any) => !seen.has(j.id))];
+      });
+      setPage(prev => prev + 1);
+      if (more.length < PAGE_SIZE) setHasMore(false);
+    } catch {
+      // Leave the button available so the user can retry.
     }
     setIsLoadingMore(false);
   };
@@ -89,9 +91,9 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
       job.company.toLowerCase().includes(searchTitle.toLowerCase()) ||
       (job.description && job.description.toLowerCase().includes(searchTitle.toLowerCase()))
     );
-    const matchesLocation = searchLocation === '' ? true : (job.location.toLowerCase().includes(searchLocation.toLowerCase()));
-    const matchesRemote = remoteOnly ? job.location.toLowerCase().includes('remote') : true;
-    const matchesEasyApply = easyApplyOnly ? job.title.toLowerCase().includes('engineer') : true;
+    const loc = (job.location ?? '').toLowerCase();
+    const matchesLocation = searchLocation === '' ? true : loc.includes(searchLocation.toLowerCase());
+    const matchesRemote = remoteOnly ? isFullyRemote(job) : true;
 
     let matchesDate = true;
     if (selectedDate !== 'Any time' && job.created_at) {
@@ -104,12 +106,7 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
       if (selectedDate === 'Last month') matchesDate = diffDays <= 30;
     }
 
-    let matchesRating = true;
-    if (selectedRating !== 'Any') {
-      const mockRating = 3.0 + (job.company.length % 3); 
-      matchesRating = mockRating >= parseFloat(selectedRating);
-    }
-    return matchesTitle && matchesLocation && matchesRemote && matchesEasyApply && matchesDate && matchesRating;
+    return matchesTitle && matchesLocation && matchesRemote && matchesDate;
   });
 
   return (
@@ -125,7 +122,7 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Artificial Intelligence</span>
           </h1>
           <p className="mx-auto max-w-2xl text-[17px] leading-8 text-gray-500 mb-10 font-medium">
-            Browse over {totalCount.toLocaleString()}+ active roles at top AI startups and enterprise tech companies.
+            Browse {totalCount.toLocaleString()} active roles at leading AI and tech companies.
           </p>
 
           <div className="mx-auto max-w-4xl flex flex-col md:flex-row items-center bg-white rounded-3xl md:rounded-full p-2 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200 focus-within:ring-2 focus-within:ring-indigo-600 transition-all mb-8">
@@ -140,7 +137,7 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
           
           <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-3">
              <div className="flex flex-wrap items-center gap-3">
-               <button onClick={() => setEasyApplyOnly(!easyApplyOnly)} className={`px-5 py-2 text-[13px] font-bold rounded-full border transition-all ${easyApplyOnly ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-300'}`}>Easy Apply only</button>
+
                <button onClick={() => setRemoteOnly(!remoteOnly)} className={`px-5 py-2 text-[13px] font-bold rounded-full border transition-all ${remoteOnly ? 'bg-indigo-50 text-indigo-700 border-indigo-500' : 'bg-white text-gray-600 border-gray-300'}`}>Remote only</button>
              </div>
              
@@ -161,14 +158,25 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
           <div className="mb-4 flex items-center justify-between shrink-0">
             <span className="text-[14px] font-bold text-gray-500">
               {filteredJobs.length === jobs.length 
-                ? `Showing newest ${jobs.length} of ${totalCount.toLocaleString()} roles` 
+                ? `Showing ${jobs.length} of ${totalCount.toLocaleString()} roles` 
                 : `${filteredJobs.length} roles found`}
             </span>
           </div>
           
           <div className="flex flex-col pb-6">
             {filteredJobs.map((job) => (
-              <div key={job.id} onClick={() => handleJobClick(job)} className={`p-5 mb-4 cursor-pointer border rounded-2xl ${activeJob?.id === job.id ? 'bg-indigo-50/50 border-indigo-300 shadow-md border-l-4 border-l-indigo-600' : 'bg-white border-gray-200 hover:shadow-xl hover:border-indigo-500'}`}>
+              <Link
+                key={job.id}
+                href={`/job/${job.id}`}
+                onClick={(e) => {
+                  // Desktop: preview in the side panel. Mobile: open the job page.
+                  if (window.matchMedia('(min-width: 1024px)').matches) {
+                    e.preventDefault();
+                    handleJobClick(job);
+                  }
+                }}
+                className={`block p-5 mb-4 cursor-pointer border rounded-2xl ${activeJob?.id === job.id ? 'bg-indigo-50/50 border-indigo-300 shadow-md border-l-4 border-l-indigo-600' : 'bg-white border-gray-200 hover:shadow-xl hover:border-indigo-500'}`}
+              >
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-[36px] h-[36px] border border-gray-200 rounded-lg flex items-center justify-center font-black text-[12px] overflow-hidden bg-white">
                     {job.company_logo_url ? <img src={job.company_logo_url} className="w-full h-full object-contain p-0.5" alt={job.company} /> : job.company.slice(0, 2).toUpperCase()}
@@ -177,14 +185,17 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
                 </div>
                 <h2 className="text-[17px] font-extrabold mb-3 text-gray-900">{job.title}</h2>
                 <div className="flex gap-2">
-                  <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 border border-indigo-200 truncate">{job.location.split(';')[0]}</span>
-<span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200">${job.salary_min || 100}K – ${job.salary_max || 150}K</span>                </div>
-              </div>
+                  <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 border border-indigo-200 truncate">{(job.location ?? '').split(';')[0]}</span>
+                  {hasSalary(job) && (
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200">${job.salary_min}K – ${job.salary_max}K</span>
+                  )}
+                </div>
+              </Link>
             ))}
           </div>
 
           {/* Load More Button */}
-          {jobs.length < totalCount && (
+          {hasMore && jobs.length < totalCount && (
             <div className="pb-10 flex justify-center">
               <button 
                 onClick={loadMoreJobs} 
@@ -216,26 +227,30 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
                  </div>
 
                  {/* Job Title */}
-                 <h1 className="text-[28px] md:text-[32px] font-extrabold text-gray-900 mb-5 leading-tight tracking-tight">
+                 <h2 className="text-[28px] md:text-[32px] font-extrabold text-gray-900 mb-5 leading-tight tracking-tight">
                    {activeJob.title}
-                 </h1>
+                 </h2>
 
                  {/* Location and Salary Pills */}
                  <div className="flex flex-wrap items-center gap-3 mb-8">
                    <span className="bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-gray-200">
-                     {activeJob.location.split(';')[0]}
+                     {(activeJob.location ?? '').split(';')[0]}
                    </span>
-<span className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-emerald-200">
-  ${activeJob.salary_min || 100}K – ${activeJob.salary_max || 150}K <span className="font-medium opacity-80">/yr</span>
-</span>
+                   {hasSalary(activeJob) && (
+                     <span className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-emerald-200">
+                       ${activeJob.salary_min}K – ${activeJob.salary_max}K <span className="font-medium opacity-80">/yr</span>
+                     </span>
+                   )}
                  </div>
 
                  {/* Apply Button */}
-                 <a href={activeJob.apply_url} target="_blank" rel="noopener noreferrer" className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[15px] px-8 py-3.5 rounded-xl shadow-sm transition-all hover:-translate-y-0.5">
-                   Apply on employer site
-                 </a>
+                 {activeJob.apply_url && (
+                   <a href={activeJob.apply_url} target="_blank" rel="noopener noreferrer nofollow" className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[15px] px-8 py-3.5 rounded-xl shadow-sm transition-all hover:-translate-y-0.5">
+                     Apply on employer site
+                   </a>
+                 )}
                </div>
-               <div className="p-8 pb-16 prose max-w-none" dangerouslySetInnerHTML={{ __html: decodeHtml(activeJob.description) }} />
+               <div className="p-8 pb-16 prose max-w-none" dangerouslySetInnerHTML={{ __html: activeJob.description ?? '' }} />
               </div>
             )}
           </div>

@@ -4,11 +4,26 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { Analytics } from '@vercel/analytics/react';
 
+const siteUrl = (
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ai-job-board-bice.vercel.app'
+).replace(/\/$/, '');
+
 // Global SEO Metadata
 export const metadata: Metadata = {
-  title: "AI Job Board | Find Remote Artificial Intelligence Jobs",
-  description: "The premier B2B platform for AI professionals. Find the latest remote jobs in Machine Learning, Prompt Engineering, and AI Safety.",
-  keywords: ["AI jobs", "remote artificial intelligence jobs", "machine learning jobs", "US remote AI"],
+  metadataBase: new URL(siteUrl),
+  title: "AI & Machine Learning Jobs | AIJobs",
+  description:
+    "Browse AI, machine learning and tech jobs from leading companies. Search by role or location and filter for remote positions.",
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: "AI & Machine Learning Jobs | AIJobs",
+    description:
+      "Browse AI, machine learning and tech jobs from leading companies. Search by role or location and filter for remote positions.",
+    url: '/',
+    siteName: 'AIJobs',
+    type: 'website',
+  },
+  twitter: { card: 'summary' },
 };
 
 export default function RootLayout({
@@ -19,14 +34,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-gray-50 text-gray-900 antialiased min-h-screen flex flex-col font-sans">
-        
+
         <Header />
-        
+
         {/* This renders whatever page the user is currently on (e.g. page.tsx) */}
         <div className="flex-grow">
           {children}
         </div>
-        
+
         <Footer />
 
         {/* Vercel Web Analytics */}
