@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 
 const PAGE_SIZE = 150;
@@ -50,6 +50,10 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
   const [page, setPage] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [total, setTotal] = useState(totalCount); // total matching roles (changes with filters)
+  const [isSearching, setIsSearching] = useState(false);
+  const requestId = useRef(0);
+  const firstRun = useRef(true);
 
   const descriptionScrollRef = useRef<HTMLDivElement>(null);
 
@@ -65,11 +69,63 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
     setSavedJobIds(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
   };
 
-  // 🧠 Load More Logic (via /api/jobs, which returns sanitized descriptions)
+  // Build the API URL for the current filters (search runs in the database, not just on loaded jobs)
+  const buildUrl = (pageNum: number) => {
+    const p = new URLSearchParams({ page: String(pageNum) });
+    if (remoteOnly) p.set('remote', '1');
+    if (searchTitle.trim()) p.set('q', searchTitle.trim());
+    if (searchLocation.trim()) p.set('loc', searchLocation.trim());
+    return `/api/jobs?${p.toString()}`;
+  };
+
+  const filtersActive = remoteOnly || searchTitle.trim() !== '' || searchLocation.trim() !== '';
+
+  // When a filter changes: search the whole database (debounced). When all filters clear: restore the start page.
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    const id = ++requestId.current;
+
+    if (!filtersActive) {
+      setJobs(initialJobs);
+      setTotal(totalCount);
+      setPage(0);
+      setHasMore(true);
+      setActiveJob(initialJobs[0] || null);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(buildUrl(0));
+        if (!res.ok) throw new Error('Search failed');
+        const data = await res.json();
+        if (id !== requestId.current) return; // a newer search has started
+        const results = data.jobs ?? [];
+        setJobs(results);
+        setTotal(data.total ?? results.length);
+        setPage(1);
+        setHasMore(results.length >= PAGE_SIZE);
+        setActiveJob(results[0] || null);
+      } catch {
+        // keep the current list if the search fails
+      }
+      if (id === requestId.current) setIsSearching(false);
+    }, 350);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remoteOnly, searchTitle, searchLocation]);
+
+  // Load More (uses the same filters, skips jobs already on screen)
   const loadMoreJobs = async () => {
     setIsLoadingMore(true);
     try {
-      const res = await fetch(`/api/jobs?page=${page}`);
+      const res = await fetch(buildUrl(page));
       if (!res.ok) throw new Error('Failed to load jobs');
       const { jobs: more = [] } = await res.json();
 
@@ -157,9 +213,11 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
         <div className="w-full lg:w-[420px] flex flex-col shrink-0">
           <div className="mb-4 flex items-center justify-between shrink-0">
             <span className="text-[14px] font-bold text-gray-500">
-              {filteredJobs.length === jobs.length 
-                ? `Showing ${jobs.length} of ${totalCount.toLocaleString()} roles` 
-                : `${filteredJobs.length} roles found`}
+              {isSearching
+                ? 'Searching...'
+                : filteredJobs.length === jobs.length
+                  ? `Showing ${jobs.length} of ${total.toLocaleString()} roles`
+                  : `${filteredJobs.length} roles found`}
             </span>
           </div>
           
@@ -195,7 +253,7 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
           </div>
 
           {/* Load More Button */}
-          {hasMore && jobs.length < totalCount && (
+          {hasMore && jobs.length < total && (
             <div className="pb-10 flex justify-center">
               <button 
                 onClick={loadMoreJobs} 
