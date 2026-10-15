@@ -6,7 +6,7 @@ import { getCompanyMeta, curatedCompanies } from '../lib/companiesData';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Top Tech & AI Companies Hiring | TechJobs',
+  title: 'Top Tech Companies Hiring | TechJobs',
   description: 'Explore leading companies and startups hiring engineers, data scientists, and product leaders. View culture profiles and active roles.',
 };
 
@@ -15,38 +15,55 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function CompaniesIndex() {
-  // Query Supabase for real-time counts
+  // 🧠 FIX 1: Lower limit to 4000 to prevent Vercel Serverless Function timeouts
   const { data: jobs } = await supabase
     .from('jobs')
     .select('company, company_logo_url')
     .eq('status', 'active')
-    .limit(10000);
+    .limit(4000);
 
   // Group database jobs by company
   const countMap = new Map<string, { count: number; logoUrl: string }>();
+  
   (jobs || []).forEach(job => {
-    if (!countMap.has(job.company)) {
-      countMap.set(job.company, { count: 1, logoUrl: job.company_logo_url || '' });
+    // 🧠 FIX 2: Strictly protect against null/undefined company names from scrapers
+    if (!job || !job.company || typeof job.company !== 'string') return;
+    
+    const companyName = job.company.trim();
+    if (!companyName) return;
+
+    if (!countMap.has(companyName)) {
+      countMap.set(companyName, { count: 1, logoUrl: job.company_logo_url || '' });
     } else {
-      countMap.get(job.company)!.count += 1;
+      countMap.get(companyName)!.count += 1;
     }
   });
 
-  // Merge database counts with curated companies list
+  // Merge database counts with curated companies list safely
+  const curatedKeys = curatedCompanies ? Object.keys(curatedCompanies) : [];
   const allCompanyNames = Array.from(
-    new Set([...Object.keys(curatedCompanies), ...Array.from(countMap.keys())])
+    new Set([...curatedKeys, ...Array.from(countMap.keys())])
   );
 
   const companies = allCompanyNames
     .map(name => {
-      const meta = getCompanyMeta(name);
+      // 🧠 FIX 3: Safe fallback if the getCompanyMeta mapping fails
+      let meta;
+      try {
+        meta = getCompanyMeta(name);
+      } catch (e) {
+        meta = { name, domain: 'unknown.com', industry: 'Technology', description: `${name} is actively recruiting tech talent.` };
+      }
+      
       const dbInfo = countMap.get(name);
       return {
         ...meta,
+        name: meta.name || name, // Guarantee name exists for the React Key
         jobCount: dbInfo ? dbInfo.count : 0,
-        logoUrl: `https://unavatar.io/${meta.domain}`
+        logoUrl: `https://unavatar.io/${meta?.domain || 'unknown.com'}`
       };
     })
+    .filter(company => company.jobCount > 0 || curatedKeys.includes(company.name))
     .sort((a, b) => b.jobCount - a.jobCount);
 
   return (
@@ -97,7 +114,7 @@ export default async function CompaniesIndex() {
             >
               <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-indigo-500 transition-all flex flex-col h-full">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-[60px] h-[60px] border border-gray-100 rounded-xl flex items-center justify-center bg-white shadow-sm overflow-hidden p-2">
+                  <div className="w-[60px] h-[60px] border border-gray-100 rounded-xl flex items-center justify-center bg-white shadow-sm overflow-hidden p-2 shrink-0">
                     <img 
                       src={company.logoUrl} 
                       alt={company.name} 
@@ -105,7 +122,7 @@ export default async function CompaniesIndex() {
                       onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   </div>
-                  <span className="text-[12px] font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+                  <span className="text-[12px] font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 truncate max-w-[180px]">
                     {company.industry}
                   </span>
                 </div>
