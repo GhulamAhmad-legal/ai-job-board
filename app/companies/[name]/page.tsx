@@ -93,7 +93,7 @@ export default async function CompanyProfilePage({ params }: { params: Promise<{
                   {job.location.split(';')[0]}
                 </span>
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200">
-                  ${job.salary_min \vert{}\vert{} 100}K –${job.salary_max || 150}K
+                  ${job.salary_min || 100}K – ${job.salary_max || 150}K
                 </span>
               </div>
             </Link>
