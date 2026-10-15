@@ -10,57 +10,83 @@ export const metadata: Metadata = {
   description: 'Explore leading companies and startups hiring engineers, data scientists, and product leaders. View culture profiles and active roles.',
 };
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function CompaniesIndex() {
-  // 🧠 FIX 1: Lower limit to 4000 to prevent Vercel Serverless Function timeouts
-  const { data: jobs } = await supabase
-    .from('jobs')
-    .select('company, company_logo_url')
-    .eq('status', 'active')
-    .limit(4000);
+  let jobs: any[] = [];
 
-  // Group database jobs by company
-  const countMap = new Map<string, { count: number; logoUrl: string }>();
-  
-  (jobs || []).forEach(job => {
-    // 🧠 FIX 2: Strictly protect against null/undefined company names from scrapers
-    if (!job || !job.company || typeof job.company !== 'string') return;
-    
-    const companyName = job.company.trim();
-    if (!companyName) return;
+  // 🧠 BULLETPROOF FIX 1: Wrap DB call in try/catch to prevent Vercel 500 timeouts
+  try {
+    if (supabaseUrl && supabaseKey) {
+      const res = await supabase
+        .from('jobs')
+        .select('company, company_logo_url')
+        .eq('status', 'active')
+        .limit(2000); // Lowered to 2000 to keep the serverless function fast
 
-    if (!countMap.has(companyName)) {
-      countMap.set(companyName, { count: 1, logoUrl: job.company_logo_url || '' });
-    } else {
-      countMap.get(companyName)!.count += 1;
+      if (res.data) {
+        jobs = res.data;
+      } else if (res.error) {
+        console.error("Supabase returned an error:", res.error);
+      }
     }
-  });
+  } catch (error) {
+    console.error("Network or Supabase exception caught:", error);
+    // Page safely falls back to rendering curated companies
+  }
 
-  // Merge database counts with curated companies list safely
-  const curatedKeys = curatedCompanies ? Object.keys(curatedCompanies) : [];
+  const countMap = new Map<string, { count: number; logoUrl: string }>();
+
+  // 🧠 BULLETPROOF FIX 2: Safely map jobs, ignoring corrupt or missing data
+  try {
+    (jobs || []).forEach(job => {
+      if (!job || !job.company || typeof job.company !== 'string') return;
+
+      const companyName = job.company.trim();
+      if (!companyName) return;
+
+      if (!countMap.has(companyName)) {
+        countMap.set(companyName, { count: 1, logoUrl: job.company_logo_url || '' });
+      } else {
+        countMap.get(companyName)!.count += 1;
+      }
+    });
+  } catch (e) {
+    console.error("Error processing jobs array:", e);
+  }
+
+  const curatedKeys = (typeof curatedCompanies === 'object' && curatedCompanies !== null) ? Object.keys(curatedCompanies) : [];
   const allCompanyNames = Array.from(
     new Set([...curatedKeys, ...Array.from(countMap.keys())])
   );
 
   const companies = allCompanyNames
     .map(name => {
-      // 🧠 FIX 3: Safe fallback if the getCompanyMeta mapping fails
       let meta;
+      // 🧠 BULLETPROOF FIX 3: Catch any potential errors in the metadata matcher
       try {
-        meta = getCompanyMeta(name);
+        meta = typeof getCompanyMeta === 'function' ? getCompanyMeta(name) : undefined;
       } catch (e) {
-        meta = { name, domain: 'unknown.com', industry: 'Technology', description: `${name} is actively recruiting tech talent.` };
+        console.error("getCompanyMeta error:", e);
       }
-      
+
+      const fallbackMeta = {
+        name,
+        domain: 'unknown.com',
+        industry: 'Technology',
+        description: `${name} is actively recruiting engineering and tech talent.`
+      };
+
+      const safeMeta = meta || fallbackMeta;
       const dbInfo = countMap.get(name);
+
       return {
-        ...meta,
-        name: meta.name || name, // Guarantee name exists for the React Key
+        ...safeMeta,
+        name: safeMeta.name || name, 
         jobCount: dbInfo ? dbInfo.count : 0,
-        logoUrl: `https://unavatar.io/${meta?.domain || 'unknown.com'}`
+        logoUrl: `https://unavatar.io/${safeMeta.domain || 'unknown.com'}`
       };
     })
     .filter(company => company.jobCount > 0 || curatedKeys.includes(company.name))
@@ -69,7 +95,6 @@ export default async function CompaniesIndex() {
   return (
     <main className="min-h-screen bg-[#F5F6F8] font-sans pb-24 text-[#181818]">
       
-      {/* Navigation */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 h-[65px]">
         <div className="max-w-[1152px] mx-auto px-4 h-full flex items-center justify-between">
           <div className="flex items-center gap-8">
@@ -93,7 +118,6 @@ export default async function CompaniesIndex() {
         </div>
       </nav>
 
-      {/* Header */}
       <div className="max-w-[1152px] mx-auto px-4 mt-16 mb-12 text-center md:text-left">
         <h1 className="text-[40px] md:text-[48px] font-black text-gray-900 tracking-tight mb-4">
           Top Companies Hiring
@@ -103,7 +127,6 @@ export default async function CompaniesIndex() {
         </p>
       </div>
 
-      {/* Grid */}
       <div className="max-w-[1152px] mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {companies.map((company) => (
