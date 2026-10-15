@@ -95,29 +95,7 @@ export default async function CompaniesIndex() {
   return (
     <main className="min-h-screen bg-[#F5F6F8] font-sans pb-24 text-[#181818]">
       
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 h-[65px]">
-        <div className="max-w-[1152px] mx-auto px-4 h-full flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link href="/" className="text-[22px] font-black tracking-tighter text-blue-600">
-              Tech<span className="text-[#00060C]">Jobs</span>
-            </Link>
-            <div className="hidden md:flex items-center gap-6 text-[15px] font-bold text-gray-500 pt-1">
-              <Link href="/" className="hover:text-gray-900 transition-colors">Find Jobs</Link>
-              <Link href="/companies" className="text-gray-900 border-b-2 border-blue-600 pb-[19px]">Companies</Link>
-              <Link href="/about" className="hover:text-gray-900 transition-colors">About</Link>
-            </div>
-          </div>
-          <div className="flex items-center gap-6">
-            <Link href="/contact" className="hidden md:block text-[14px] font-bold text-gray-500 hover:text-gray-900 transition-colors">
-              Contact
-            </Link>
-            <Link href="/post-job" className="bg-[#00060C] hover:bg-gray-800 text-white font-bold text-[14px] px-6 py-2.5 rounded-lg transition-all">
-              Post a Job — $299
-            </Link>
-          </div>
-        </div>
-      </nav>
-
+      
       <div className="max-w-[1152px] mx-auto px-4 mt-16 mb-12 text-center md:text-left">
         <h1 className="text-[40px] md:text-[48px] font-black text-gray-900 tracking-tight mb-4">
           Top Companies Hiring
