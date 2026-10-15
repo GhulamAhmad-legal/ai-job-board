@@ -49,13 +49,17 @@ export default async function Home() {
     .eq('status', 'active');
 
   // 1. Prefer jobs tagged "AI", spread across companies.
-  const { data: aiPool } = await supabase
+  // `tags` is jsonb, so match with the raw "cs" (contains) operator and a JSON array.
+  // (.contains() with a JS array builds a Postgres array literal, which fails on jsonb.)
+  const { data: aiPool, error: aiError } = await supabase
     .from('jobs')
     .select('id, company, created_at')
     .eq('status', 'active')
-    .contains('tags', ['AI'])
+    .filter('tags', 'cs', JSON.stringify(['AI']))
     .order('created_at', { ascending: false })
     .limit(POOL_SIZE);
+
+  if (aiError) console.error('AI jobs query failed:', aiError.message);
 
   let picked: Slim[] = diversify((aiPool ?? []) as Slim[], FEED_SIZE);
 
