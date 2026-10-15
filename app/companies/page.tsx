@@ -142,7 +142,6 @@ export default async function CompaniesIndex() {
                       src={company.logoUrl} 
                       alt={company.name} 
                       className="w-full h-full object-contain group-hover:scale-105 transition-transform" 
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   </div>
                   <span className="text-[12px] font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 truncate max-w-[180px]">
