@@ -1,49 +1,77 @@
+import { getSiteUrl } from './lib/siteUrl';
 import { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+export const revalidate = 3600;
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+// Set NEXT_PUBLIC_SITE_URL in Vercel once you have your custom domain.
+const baseUrl = getSiteUrl();
+
+type JobRow = { id: string; company: string; created_at: string | null };
+
+// Supabase returns at most 1000 rows per request, so page through them all.
+async function fetchAllActiveJobs(): Promise<JobRow[]> {
+  const pageSize = 1000;
+  const all: JobRow[] = [];
+
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('id, company, created_at')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: true }) // stable order for pagination
+      .range(from, from + pageSize - 1);
+
+    if (error || !data) break;
+    all.push(...(data as JobRow[]));
+    if (data.length < pageSize) break;
+  }
+
+  return all;
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://ai-job-board-bice.vercel.app'; // Change to your live domain later (e.g., https://aijobs.com)
+  const jobs = await fetchAllActiveJobs();
 
-  // 1. Fetch all active jobs
-  const { data: jobs } = await supabase
-    .from('jobs')
-    .select('id, created_at, company')
-    .eq('status', 'active');
-
-  // 2. Generate individual Job URLs
-  const jobUrls = (jobs || []).map((job) => ({
+  const jobUrls: MetadataRoute.Sitemap = jobs.map((job) => ({
     url: `${baseUrl}/job/${job.id}`,
-    lastModified: new Date(job.created_at),
-    changeFrequency: 'daily' as const,
-    priority: 0.7,
+    ...(job.created_at ? { lastModified: new Date(job.created_at) } : {}),
   }));
 
-  // 3. 🧠 Extract unique companies for the Category Pages
-  const uniqueCompanies = Array.from(new Set((jobs || []).map(j => j.company)));
-  const companyUrls = uniqueCompanies.map((company) => ({
+  // One entry per company; lastModified = its newest job.
+  const newestByCompany = new Map<string, Date>();
+  for (const job of jobs) {
+    if (!job.company) continue;
+    const d = job.created_at ? new Date(job.created_at) : new Date(0);
+    const prev = newestByCompany.get(job.company);
+    if (!prev || d > prev) newestByCompany.set(job.company, d);
+  }
+
+  const companyUrls: MetadataRoute.Sitemap = Array.from(
+    newestByCompany.entries()
+  ).map(([company, lastModified]) => ({
     url: `${baseUrl}/companies/${encodeURIComponent(company)}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.8, // Ranked slightly higher than individual jobs!
+    ...(lastModified.getTime() > 0 ? { lastModified } : {}),
   }));
+
+  const staticPaths = [
+    '/companies',
+    '/post-job',
+    '/about',
+    '/contact',
+    '/privacy',
+    '/terms',
+  ];
 
   return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'hourly',
-      priority: 1.0,
-    },
-    {
-      url: `${baseUrl}/post-job`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
+    { url: baseUrl, lastModified: new Date() },
+    ...staticPaths.map((p) => ({ url: `${baseUrl}${p}` })),
     ...companyUrls,
     ...jobUrls,
   ];

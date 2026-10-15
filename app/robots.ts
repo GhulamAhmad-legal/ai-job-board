@@ -1,8 +1,7 @@
+import { getSiteUrl } from './lib/siteUrl';
 import { MetadataRoute } from 'next';
 
-const baseUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ai-job-board-bice.vercel.app'
-).replace(/\/$/, '');
+const baseUrl = getSiteUrl();
 
 export default function robots(): MetadataRoute.Robots {
   return {

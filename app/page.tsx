@@ -1,26 +1,92 @@
 import { createClient } from '@supabase/supabase-js';
 import JobFeedClient from './JobFeedClient';
+import { cleanDescription } from './lib/cleanDescription';
 
-export const revalidate = 3600; 
+export const revalidate = 3600;
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+const FEED_SIZE = 150; // jobs sent to the page
+const POOL_SIZE = 1000; // newest jobs considered (light columns only)
+
+type Slim = { id: string; company: string; created_at: string | null };
+
+// Round-robin across companies: 1st job of each company, then 2nd of each, etc.
+function diversify<T extends { company: string }>(rows: T[], size: number): T[] {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const list = groups.get(row.company);
+    if (list) list.push(row);
+    else groups.set(row.company, [row]);
+  }
+
+  const queues = Array.from(groups.values());
+  const out: T[] = [];
+
+  for (let round = 0; out.length < size; round++) {
+    let added = false;
+    for (const queue of queues) {
+      if (round < queue.length) {
+        out.push(queue[round]);
+        added = true;
+        if (out.length >= size) break;
+      }
+    }
+    if (!added) break;
+  }
+
+  return out;
+}
 
 export default async function Home() {
-  // 🧠 Added .limit(150) to prevent the 28MB payload crash!
-  // The 'count' will still accurately return the full 2,500+ number for your header.
-  const { data: jobs, count } = await supabase
+  // Total active jobs (header count).
+  const { count } = await supabase
     .from('jobs')
-    .select('*', { count: 'exact' })
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
-    .limit(150); 
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'active');
 
-  return (
-    <JobFeedClient 
-      initialJobs={jobs || []} 
-      totalCount={count || 0} 
-    />
-  );
+  // 1. Prefer jobs tagged "AI", spread across companies.
+  const { data: aiPool } = await supabase
+    .from('jobs')
+    .select('id, company, created_at')
+    .eq('status', 'active')
+    .contains('tags', ['AI'])
+    .order('created_at', { ascending: false })
+    .limit(POOL_SIZE);
+
+  let picked: Slim[] = diversify((aiPool ?? []) as Slim[], FEED_SIZE);
+
+  // 2. If there aren't enough AI jobs, top up with other active jobs.
+  if (picked.length < FEED_SIZE) {
+    const { data: restPool } = await supabase
+      .from('jobs')
+      .select('id, company, created_at')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(POOL_SIZE);
+
+    const taken = new Set(picked.map((p) => p.id));
+    const extra = diversify(
+      ((restPool ?? []) as Slim[]).filter((r) => !taken.has(r.id)),
+      FEED_SIZE - picked.length
+    );
+    picked = [...picked, ...extra];
+  }
+
+  // 3. Fetch full rows only for the jobs we'll actually show.
+  const ids = picked.map((p) => p.id);
+  const { data: rows } = ids.length
+    ? await supabase.from('jobs').select('*').in('id', ids)
+    : { data: [] };
+
+  const byId = new Map((rows ?? []).map((r) => [r.id, r]));
+  const jobs = ids
+    .map((id) => byId.get(id))
+    .filter(Boolean)
+    .map((j) => ({ ...j, description: cleanDescription(j.description ?? '') }));
+
+  return <JobFeedClient initialJobs={jobs} totalCount={count || 0} />;
 }
