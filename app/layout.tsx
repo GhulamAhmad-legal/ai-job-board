@@ -13,12 +13,10 @@ export const metadata: Metadata = {
   title: "AI & Machine Learning Jobs | AIJobs",
   description:
     "Browse AI, machine learning and tech jobs from leading companies. Search by role or location and filter for remote positions.",
-  alternates: { canonical: '/' },
   openGraph: {
     title: "AI & Machine Learning Jobs | AIJobs",
     description:
       "Browse AI, machine learning and tech jobs from leading companies. Search by role or location and filter for remote positions.",
-    url: '/',
     siteName: 'AIJobs',
     type: 'website',
   },
