@@ -3,7 +3,7 @@ import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import sanitizeHtml from 'sanitize-html';
+import { cleanDescription } from '../../lib/cleanDescription';
 
 export const revalidate = 3600;
 
@@ -13,38 +13,6 @@ const supabase = createClient(
 );
 
 const baseUrl = getSiteUrl();
-
-// Decode HTML entities, then sanitize so scraped descriptions can't inject scripts.
-function decodeHtml(html: string) {
-  if (!html) return '';
-  return html
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&')
-    .replace(/&#39;/g, "'")
-    .replace(/&rsquo;/g, "'")
-    .replace(/&lsquo;/g, "'")
-    .replace(/&nbsp;/g, ' ');
-}
-
-function cleanDescription(raw: string) {
-  return sanitizeHtml(decodeHtml(raw), {
-    transformTags: {
-      h1: 'h2', // keep exactly one H1 on the page
-      a: sanitizeHtml.simpleTransform('a', {
-        rel: 'noopener noreferrer nofollow',
-        target: '_blank',
-      }),
-    },
-  });
-}
-
-function plainText(html: string) {
-  return sanitizeHtml(decodeHtml(html), { allowedTags: [], allowedAttributes: {} })
-    .replace(/\s+/g, ' ')
-    .trim();
-}
 
 // Maps "United States" / "California" / "Ontario, Canada" to a schema.org requirement.
 function remoteRequirement(region: string) {
@@ -85,9 +53,22 @@ export async function generateMetadata({
   if (!job) return { title: 'Job Not Found | AIJobs', robots: { index: false } };
 
   const location = (job.location ?? '').split(';')[0];
-  const snippet = plainText(job.description ?? '').slice(0, 110);
-  const title = `${job.title} at ${job.company}${location ? ` – ${location}` : ''} | AIJobs`;
-  const description = `${job.title} at ${job.company}${location ? ` in ${location}` : ''}. ${snippet}…`;
+  const cleanTitle = String(job.title).replace(/\s+/g, ' ').trim();
+  const title = `${cleanTitle} at ${job.company}${location ? ` – ${location}` : ''} | AIJobs`;
+
+  // Built from the job's own facts, so every description is unique (no employer boilerplate or requisition codes).
+  const hasSalary =
+    typeof job.salary_min === 'number' &&
+    typeof job.salary_max === 'number' &&
+    job.salary_min > 0 &&
+    job.salary_max >= job.salary_min;
+  const salaryText = hasSalary
+    ? job.salary_min === job.salary_max
+      ? ` Pay: $${job.salary_min}K per year.`
+      : ` Pay: $${job.salary_min}K–$${job.salary_max}K per year.`
+    : '';
+  const remoteText = /^remote(\s+-\s+|\s*,\s*)/i.test(job.location ?? '') ? ' Fully remote role.' : '';
+  const description = `${cleanTitle} at ${job.company}${location ? ` in ${location}` : ''}.${remoteText}${salaryText} Read the full description and apply on the employer’s website.`;
   const url = `${baseUrl}/job/${id}`;
 
   return {

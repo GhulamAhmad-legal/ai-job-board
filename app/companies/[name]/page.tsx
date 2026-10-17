@@ -18,6 +18,7 @@ type JobRow = {
   location: string | null;
   salary_min: number | null;
   salary_max: number | null;
+  company_logo_url: string | null;
 };
 
 // Safely read the curated profile (industry, description, domain) for a company.
@@ -46,7 +47,7 @@ async function fetchCompanyJobs(name: string): Promise<JobRow[]> {
   for (let from = 0; from < 10000; from += pageSize) {
     const { data, error } = await supabase
       .from('jobs')
-      .select('id, title, company, location, salary_min, salary_max')
+      .select('id, title, company, location, salary_min, salary_max, company_logo_url')
       .ilike('company', safeName)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
@@ -94,7 +95,8 @@ export default async function CompanyPage({
 
   const companyName = jobs[0].company;
   const meta = readMeta(companyName);
-  const logoUrl = meta.domain ? `https://unavatar.io/${meta.domain}` : '';
+  const hasRealDomain = !!meta.domain && meta.domain !== 'unknown.com';
+  const logoUrl = hasRealDomain ? `https://unavatar.io/${meta.domain}` : jobs[0].company_logo_url || '';
 
   return (
     <main className="min-h-screen bg-[#F5F6F8] font-sans pb-20">

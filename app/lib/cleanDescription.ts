@@ -1,6 +1,8 @@
 import sanitizeHtml from 'sanitize-html';
 
-// Decode HTML entities, then sanitize so scraped descriptions can't inject scripts.
+// Greenhouse sends descriptions as ESCAPED html (&lt;p&gt;...), Ashby sends real html (<p>...).
+// Only decode when the text has no real tags yet, then sanitize either way so
+// scraped descriptions can never inject scripts.
 function decodeHtml(html: string) {
   if (!html) return '';
   return html
@@ -15,7 +17,10 @@ function decodeHtml(html: string) {
 }
 
 export function cleanDescription(raw: string) {
-  return sanitizeHtml(decodeHtml(raw), {
+  const hasRealTags = /<(p|div|ul|ol|li|h[1-6]|br|strong|em|b|a|span)[\s>/]/i.test(raw || '');
+  const html = hasRealTags ? raw : decodeHtml(raw);
+
+  return sanitizeHtml(html, {
     transformTags: {
       h1: 'h2', // keep exactly one H1 per page
       a: sanitizeHtml.simpleTransform('a', {

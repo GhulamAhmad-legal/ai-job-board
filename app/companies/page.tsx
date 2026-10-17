@@ -25,16 +25,16 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Page through ALL active jobs (only the company column) so counts are exact,
+// Page through ALL active jobs (only company + logo columns) so counts are exact,
 // no matter how many jobs there are.
-async function fetchActiveCompanyNames(): Promise<string[]> {
+async function fetchActiveCompanyRows(): Promise<{ company: string; logo: string }[]> {
   const pageSize = 1000;
-  const names: string[] = [];
+  const rows: { company: string; logo: string }[] = [];
 
-  for (let from = 0; from < 50000; from += pageSize) {
+  for (let from = 0; from < 100000; from += pageSize) {
     const { data, error } = await supabase
       .from('jobs')
-      .select('company')
+      .select('company, company_logo_url')
       .eq('status', 'active')
       .order('id', { ascending: true })
       .range(from, from + pageSize - 1);
@@ -45,23 +45,25 @@ async function fetchActiveCompanyNames(): Promise<string[]> {
     }
     for (const row of data) {
       if (row && typeof row.company === 'string' && row.company.trim()) {
-        names.push(row.company.trim());
+        rows.push({ company: row.company.trim(), logo: row.company_logo_url || '' });
       }
     }
     if (data.length < pageSize) break;
   }
 
-  return names;
+  return rows;
 }
 
 export default async function CompaniesIndex() {
-  const countMap = new Map<string, number>();
+  const countMap = new Map<string, { count: number; logo: string }>();
 
   try {
     if (supabaseUrl && supabaseKey) {
-      const names = await fetchActiveCompanyNames();
-      for (const name of names) {
-        countMap.set(name, (countMap.get(name) ?? 0) + 1);
+      const rows = await fetchActiveCompanyRows();
+      for (const { company, logo } of rows) {
+        const existing = countMap.get(company);
+        if (existing) existing.count += 1;
+        else countMap.set(company, { count: 1, logo });
       }
     }
   } catch (error) {
@@ -93,11 +95,15 @@ export default async function CompaniesIndex() {
 
       const safeMeta = meta || fallbackMeta;
 
+      const info = countMap.get(name);
+      const hasRealDomain = !!safeMeta.domain && safeMeta.domain !== 'unknown.com';
+
       return {
         ...safeMeta,
         name: safeMeta.name || name,
-        jobCount: countMap.get(name) ?? 0,
-        logoUrl: `https://unavatar.io/${safeMeta.domain || 'unknown.com'}`,
+        jobCount: info?.count ?? 0,
+        // Curated companies use their domain logo; new companies use the logo saved with their jobs.
+        logoUrl: hasRealDomain ? `https://unavatar.io/${safeMeta.domain}` : info?.logo || '',
       };
     })
     // Only companies that actually have open roles (a company with 0 jobs would be a dead link).
