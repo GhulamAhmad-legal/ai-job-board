@@ -163,19 +163,17 @@ export default async function JobPage({
         }}
       />
 
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 h-[65px]">
-        <div className="max-w-[800px] mx-auto px-4 h-full flex items-center justify-between">
-          <Link href="/" className="flex items-center text-gray-500 hover:text-blue-600 transition-colors font-bold text-[14px]">
-            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to all jobs
-          </Link>
-          <Link href="/" className="text-[20px] font-black tracking-tighter text-blue-600">
-            AI<span className="text-[#00060C]">Jobs</span>
-          </Link>
-        </div>
-      </nav>
+      <div className="max-w-[800px] mx-auto px-4 pt-6">
+        <Link
+          href="/"
+          className="inline-flex items-center text-gray-500 hover:text-blue-600 transition-colors font-bold text-[14px]"
+        >
+          <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to all jobs
+        </Link>
+      </div>
 
       <div className="max-w-[800px] mx-auto px-4 mt-8">
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
