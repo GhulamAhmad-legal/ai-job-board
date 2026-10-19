@@ -1,3 +1,4 @@
+import { siteConfig } from './siteConfig';
 export interface CompanyInfo {
   name: string;
   domain: string;
@@ -326,6 +327,6 @@ export function getCompanyMeta(companyName: string): CompanyInfo {
     name: normalized,
     domain: '',
     industry: 'Technology',
-    description: `${normalized} has open roles listed on AIJobs.`
+    description: `${normalized} has open roles listed on ${siteConfig.name}.`
   };
 }

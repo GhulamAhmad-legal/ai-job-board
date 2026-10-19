@@ -29,9 +29,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const meta = getPostMeta(slug);
-  if (!meta) return { title: 'Article not found | AIJobs', robots: { index: false } };
+  if (!meta) return { title: `Article not found | ${siteConfig.name}`, robots: { index: false } };
 
-  const title = `${meta.title} | AIJobs`;
+  const title = `${meta.title} | ${siteConfig.name}`;
   const path = `/blog/${meta.slug}`;
 
   return {
@@ -42,7 +42,7 @@ export async function generateMetadata({
       title,
       description: meta.description,
       url: path,
-      siteName: 'AIJobs',
+      siteName: siteConfig.name,
       type: 'article',
       publishedTime: meta.date,
       modifiedTime: meta.updated ?? meta.date,

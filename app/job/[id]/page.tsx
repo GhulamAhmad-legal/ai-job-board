@@ -1,3 +1,4 @@
+import { siteConfig } from '../../lib/siteConfig';
 import { getSiteUrl } from '../../lib/siteUrl';
 import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
@@ -50,11 +51,11 @@ export async function generateMetadata({
   const { id } = await params;
   const job = await getJob(id);
 
-  if (!job) return { title: 'Job Not Found | AIJobs', robots: { index: false } };
+  if (!job) return { title: `Job Not Found | ${siteConfig.name}`, robots: { index: false } };
 
   const location = (job.location ?? '').split(';')[0];
   const cleanTitle = String(job.title).replace(/\s+/g, ' ').trim();
-  const title = `${cleanTitle} at ${job.company}${location ? ` – ${location}` : ''} | AIJobs`;
+  const title = `${cleanTitle} at ${job.company}${location ? ` – ${location}` : ''} | ${siteConfig.name}`;
 
   // Built from the job's own facts, so every description is unique (no employer boilerplate or requisition codes).
   const hasSalary =
@@ -75,7 +76,7 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { title, description, url, type: 'website', siteName: 'AIJobs' },
+    openGraph: { title, description, url, type: 'website', siteName: siteConfig.name },
   };
 }
 

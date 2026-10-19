@@ -1,3 +1,4 @@
+import { siteConfig } from '../../lib/siteConfig';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -33,7 +34,7 @@ function readMeta(name: string) {
     name: meta?.name || name,
     domain: meta?.domain || '',
     industry: meta?.industry || 'Technology',
-    description: meta?.description || `${name} has open roles listed on AIJobs.`,
+    description: meta?.description || `${name} has open roles listed on ${siteConfig.name}.`,
   };
 }
 
@@ -70,15 +71,15 @@ export async function generateMetadata({
   const decodedName = decodeURIComponent(name);
   const meta = readMeta(decodedName);
 
-  const title = `${decodedName} Careers and Open Roles | AIJobs`;
-  const description = `${decodedName} open roles on AIJobs. ${meta.description}`.slice(0, 158);
+  const title = `${decodedName} Careers and Open Roles | ${siteConfig.name}`;
+  const description = `${decodedName} open roles on ${siteConfig.name}. ${meta.description}`.slice(0, 158);
   const path = `/companies/${encodeURIComponent(decodedName)}`;
 
   return {
     title,
     description,
     alternates: { canonical: path },
-    openGraph: { title, description, url: path, type: 'website', siteName: 'AIJobs' },
+    openGraph: { title, description, url: path, type: 'website', siteName: siteConfig.name },
   };
 }
 

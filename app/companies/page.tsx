@@ -1,3 +1,4 @@
+import { siteConfig } from '../lib/siteConfig';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -7,16 +8,16 @@ import { getCompanyMeta, curatedCompanies } from '../lib/companiesData';
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: 'Companies Hiring in AI and Tech | AIJobs',
+  title: `Companies Hiring in AI and Tech | ${siteConfig.name}`,
   description:
-    'Browse the companies with open roles on AIJobs, including Anthropic, Databricks, Scale AI, Figma, Reddit, Vercel, Discord and Waymo.',
+    `Browse the AI and tech companies with open roles on ${siteConfig.name}, including Anthropic, OpenAI, Databricks, Scale AI, Cohere and Perplexity.`,
   alternates: { canonical: '/companies' },
   openGraph: {
-    title: 'Companies Hiring in AI and Tech | AIJobs',
+    title: `Companies Hiring in AI and Tech | ${siteConfig.name}`,
     description:
-      'Browse the companies with open roles on AIJobs, including Anthropic, Databricks, Scale AI, Figma, Reddit, Vercel, Discord and Waymo.',
+      `Browse the AI and tech companies with open roles on ${siteConfig.name}, including Anthropic, OpenAI, Databricks, Scale AI, Cohere and Perplexity.`,
     url: '/companies',
-    siteName: 'AIJobs',
+    siteName: siteConfig.name,
     type: 'website',
   },
 };
@@ -90,7 +91,7 @@ export default async function CompaniesIndex() {
         name,
         domain: 'unknown.com',
         industry: 'Technology',
-        description: `${name} has open roles listed on AIJobs.`,
+        description: `${name} has open roles listed on ${siteConfig.name}.`,
       };
 
       const safeMeta = meta || fallbackMeta;
@@ -117,7 +118,7 @@ export default async function CompaniesIndex() {
           Companies Hiring
         </h1>
         <p className="text-[18px] text-gray-500 font-medium max-w-2xl">
-          The companies with open roles on AIJobs, with the number of active listings for each.
+          The companies with open roles on {siteConfig.name}, with the number of active listings for each.
         </p>
       </div>
 

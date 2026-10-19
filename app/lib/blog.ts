@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
+import { siteConfig } from './siteConfig';
 
 const POSTS_DIR = path.join(process.cwd(), 'content', 'blog');
 
@@ -12,7 +13,8 @@ export function getPostHtml(slug: string): { html: string; words: number } | nul
   const file = path.join(POSTS_DIR, `${slug}.md`);
   if (!fs.existsSync(file)) return null;
 
-  const markdown = fs.readFileSync(file, 'utf8');
+  // Write {{SITE_NAME}} in an article and it becomes the brand name from siteConfig.ts
+  const markdown = fs.readFileSync(file, 'utf8').replace(/\{\{SITE_NAME\}\}/g, siteConfig.name);
   const raw = marked.parse(markdown, { async: false }) as string;
 
   const html = sanitizeHtml(raw, {

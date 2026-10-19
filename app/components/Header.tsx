@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { siteConfig } from '../lib/siteConfig';
 
 const links = [
   { href: '/', label: 'Find Jobs', isActive: (p: string) => p === '/' },
@@ -21,7 +22,7 @@ export default function Header() {
           <div className="flex items-center h-full">
             <Link href="/" className="flex-shrink-0 flex items-center mr-8">
               <span className="text-[22px] font-black tracking-tighter text-blue-600">
-                AI<span className="text-[#00060C]">Jobs</span>
+                {siteConfig.logoLeft}<span className="text-[#00060C]">{siteConfig.logoRight}</span>
               </span>
             </Link>
 

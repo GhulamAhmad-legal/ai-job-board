@@ -1,3 +1,4 @@
+import { siteConfig } from './lib/siteConfig';
 import { getSiteUrl } from './lib/siteUrl';
 import type { Metadata } from "next";
 import "./globals.css";
@@ -10,14 +11,14 @@ const siteUrl = getSiteUrl();
 // Global SEO Metadata
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "AI & Machine Learning Jobs | AIJobs",
+  title: `Tech, AI & Machine Learning Jobs | ${siteConfig.name}`,
   description:
-    "Browse AI, machine learning and tech jobs from leading companies. Search by role or location and filter for remote positions.",
+    "Browse AI, machine learning and engineering jobs at leading tech companies. Search by role or location and filter for remote positions.",
   openGraph: {
-    title: "AI & Machine Learning Jobs | AIJobs",
+    title: `Tech, AI & Machine Learning Jobs | ${siteConfig.name}`,
     description:
-      "Browse AI, machine learning and tech jobs from leading companies. Search by role or location and filter for remote positions.",
-    siteName: 'AIJobs',
+      "Browse AI, machine learning and engineering jobs at leading tech companies. Search by role or location and filter for remote positions.",
+    siteName: siteConfig.name,
     type: 'website',
   },
   twitter: { card: 'summary' },

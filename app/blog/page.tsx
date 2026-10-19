@@ -1,16 +1,17 @@
+import { siteConfig } from '../lib/siteConfig';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getPosts } from '../lib/blogIndex';
 
 export const metadata: Metadata = {
-  title: 'Blog | AIJobs',
-  description: 'Guides and data about AI and machine learning jobs, drawn from the listings on AIJobs.',
+  title: `Blog | ${siteConfig.name}`,
+  description: `Guides and data about AI and machine learning jobs, drawn from the listings on ${siteConfig.name}.`,
   alternates: { canonical: '/blog' },
   openGraph: {
-    title: 'Blog | AIJobs',
-    description: 'Guides and data about AI and machine learning jobs, drawn from the listings on AIJobs.',
+    title: `Blog | ${siteConfig.name}`,
+    description: `Guides and data about AI and machine learning jobs, drawn from the listings on ${siteConfig.name}.`,
     url: '/blog',
-    siteName: 'AIJobs',
+    siteName: siteConfig.name,
     type: 'website',
   },
 };
@@ -32,7 +33,7 @@ export default function BlogIndex() {
       <div className="max-w-[800px] mx-auto px-4 mt-14 mb-10">
         <h1 className="text-[40px] md:text-[48px] font-black text-gray-900 tracking-tight mb-3">Blog</h1>
         <p className="text-[18px] text-gray-500 font-medium">
-          Guides and data about AI and machine learning jobs, drawn from the listings on AIJobs.
+          Guides and data about AI and machine learning jobs, drawn from the listings on {siteConfig.name}.
         </p>
       </div>
 

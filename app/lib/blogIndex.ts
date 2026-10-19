@@ -3,6 +3,8 @@
 //   2. Add an entry below with the SAME slug.
 // Dates are written as YYYY-MM-DD.
 
+import { siteConfig } from './siteConfig';
+
 export type PostMeta = {
   slug: string;
   title: string;
@@ -14,10 +16,10 @@ export type PostMeta = {
 
 export const posts: PostMeta[] = [
   {
-    slug: 'how-aijobs-collects-and-labels-job-listings',
-    title: 'How AIJobs Collects, Labels and Updates Job Listings',
+    slug: 'how-we-collect-and-label-job-listings',
+    title: `How ${siteConfig.name} Collects, Labels and Updates Job Listings`,
     description:
-      'Where AIJobs listings come from, how salary, remote and AI labels are decided, and what the data does and does not cover.',
+      `Where ${siteConfig.name} listings come from, how salary, remote and AI labels are decided, and what the data does and does not cover.`,
     date: '2026-10-17',
     tags: ['About the data'],
   },
