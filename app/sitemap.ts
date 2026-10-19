@@ -1,7 +1,9 @@
 import { getSiteUrl } from './lib/siteUrl';
+import { getPosts } from './lib/blogIndex';
 import { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
 
+// Build the sitemap fresh on every request, so new scraper jobs appear without a redeploy.
 export const dynamic = 'force-dynamic';
 
 const supabase = createClient(
@@ -67,11 +69,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/contact',
     '/privacy',
     '/terms',
+    '/blog',
   ];
+
+  const postUrls: MetadataRoute.Sitemap = getPosts().map((p) => ({
+    url: `${baseUrl}/blog/${p.slug}`,
+    lastModified: new Date(p.updated ?? p.date),
+  }));
 
   return [
     { url: baseUrl, lastModified: new Date() },
     ...staticPaths.map((p) => ({ url: `${baseUrl}${p}` })),
+    ...postUrls,
     ...companyUrls,
     ...jobUrls,
   ];
