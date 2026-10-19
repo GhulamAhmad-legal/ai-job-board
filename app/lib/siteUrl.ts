@@ -1,4 +1,5 @@
-const FALLBACK = 'https://ai-job-board-bice.vercel.app';
+// Used only if NEXT_PUBLIC_SITE_URL is missing or invalid. Must be your real, final domain.
+const FALLBACK = 'https://www.coretechroles.com';
 
 // Reads NEXT_PUBLIC_SITE_URL safely. Handles empty values, a missing "https://",
 // and trailing slashes, so a typo in the env var can never break the build.
