@@ -1,8 +1,3 @@
-// The list of blog posts. To add an article:
-//   1. Save its text as content/blog/<slug>.md  (plain Markdown, start headings at "##")
-//   2. Add an entry below with the SAME slug.
-// Dates are written as YYYY-MM-DD.
-
 import { siteConfig } from './siteConfig';
 
 export type PostMeta = {
@@ -15,6 +10,13 @@ export type PostMeta = {
 };
 
 export const posts: PostMeta[] = [
+  {
+    slug: 'the-state-of-ai-hiring',
+    title: 'The State of AI Hiring: Salaries, Skills, and Remote Work',
+    description: 'A data-backed breakdown of 6,100+ active roles across 39 leading tech and AI companies, covering compensation benchmarks, remote availability, and in-demand skills.',
+    date: '2026-10-20',
+    tags: ['Data Report', 'Salaries'],
+  },
   {
     slug: 'how-we-collect-and-label-job-listings',
     title: `How ${siteConfig.name} Collects, Labels and Updates Job Listings`,
