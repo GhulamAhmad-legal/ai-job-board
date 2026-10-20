@@ -1,6 +1,6 @@
 CoreTechRoles is a job board for people who want to work in artificial intelligence and at technology companies. Before you rely on any job board, it helps to know what the data actually says about the current job market. To understand how we gather and categorize this data, you can read exactly [how we collect and label job listings](/blog/how-we-collect-and-label-job-listings).
 
-We analyzed over 6,100 active open roles across 39 leading tech and AI companies—including OpenAI, Anthropic, Databricks, and Waymo—to see exactly what the AI job market looks like right now. 
+We analyzed over 6,122 active open roles across 39 leading tech and AI companies—including OpenAI, Anthropic, Databricks, and Waymo—to see exactly what the AI job market looks like right now. 
 
 Out of 6,122 total open roles, we identified **797 dedicated AI positions**. Here is what the data tells us about who is hiring, what they pay, and the skills they actually want.
 
