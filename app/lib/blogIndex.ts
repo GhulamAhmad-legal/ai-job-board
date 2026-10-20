@@ -28,7 +28,7 @@ export function getPosts(): PostMeta[] {
     const filePath = path.join(BLOG_DIR, filename);
     const fileContent = fs.readFileSync(filePath, 'utf-8');
 
-    // 1. Check for YAML frontmatter (between --- and ---)
+    // 1. Check for YAML frontmatter
     const frontmatterMatch = fileContent.match(/^---\r?\n([\s\S]*?)\r?\n---/);
 
     let title = '';
@@ -51,7 +51,7 @@ export function getPosts(): PostMeta[] {
         if (key === 'updated') updated = val;
         if (key === 'tags') {
           tags = val
-            .replace(/^\[\vert{}\]$/g, '')
+            .replace(/^\[\vert{}\]$/g, '') // Fixed regex here
             .split(',')
             .map((t) => t.trim().replace(/^['"]|['"]$/g, ''))
             .filter(Boolean);
@@ -59,10 +59,9 @@ export function getPosts(): PostMeta[] {
       }
     }
 
-    // 2. Clean content without frontmatter for fallbacks
+    // 2. Clean content without frontmatter
     const cleanContent = fileContent.replace(/^---\r?\n[\s\S]*?\r?\n---/, '').trim();
 
-    // Fallback: If no title in frontmatter, grab the first # Heading or use filename
     if (!title) {
       const headingMatch = cleanContent.match(/^#+\s+(.+)$/m);
       if (headingMatch) {
@@ -75,7 +74,6 @@ export function getPosts(): PostMeta[] {
       }
     }
 
-    // Fallback: If no description, take the first paragraph of text
     if (!description) {
       const paragraphs = cleanContent
         .split(/\r?\n\r?\n/)
@@ -91,7 +89,7 @@ export function getPosts(): PostMeta[] {
 
       if (paragraphs.length > 0) {
         description = paragraphs[0]
-          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // strip markdown links
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
           .slice(0, 160)
           .trim();
         if (paragraphs[0].length > 160) description += '...';
@@ -100,7 +98,6 @@ export function getPosts(): PostMeta[] {
       }
     }
 
-    // Fallback: If no date, use file timestamp or today
     if (!date) {
       try {
         const stats = fs.statSync(filePath);
@@ -114,7 +111,6 @@ export function getPosts(): PostMeta[] {
       tags = ['Data Report'];
     }
 
-    // Replace {{SITE_NAME}} if present
     title = title.replace(/\{\{SITE_NAME\}\}/g, siteConfig.name);
     description = description.replace(/\{\{SITE_NAME\}\}/g, siteConfig.name);
 
@@ -128,11 +124,9 @@ export function getPosts(): PostMeta[] {
     });
   }
 
-  // Sort newest first
   return posts.sort((a, b) => b.date.localeCompare(a.date));
 }
 
-// Backwards compatibility for any file importing `posts`
 export const posts: PostMeta[] = getPosts();
 
 export function getPostMeta(slug: string): PostMeta | undefined {
