@@ -45,6 +45,10 @@ This is a simple rule, and it has limits. A role with a generic title, such as "
 
 Treat {{SITE_NAME}} as a place to find and compare openings, then confirm the details with the employer.
 
+## Where we use this data
+
+The same data powers our analysis articles on [what AI and machine learning jobs pay](post:ai-machine-learning-salary-ranges-from-job-listings), [who is hiring](post:who-is-hiring-in-ai-and-tech-open-roles-by-company), [remote AI and tech jobs](post:remote-ai-and-tech-jobs-who-offers-them), [where the AI jobs are](post:where-ai-jobs-are-cities-with-the-most-openings) and [the skills AI job descriptions ask for](post:skills-ai-job-descriptions-ask-for). You can also [browse current listings](/) or see every employer on the [companies page](/companies).
+
 ## Corrections and removals
 
 If a listing is wrong, or an employer would like one removed, please write to us through the [Contact page](/contact) and include the job link. We review these requests promptly.

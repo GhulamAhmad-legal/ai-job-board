@@ -3,6 +3,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getPosts } from '../lib/blogIndex';
 
+// Re-check once an hour so scheduled posts appear on their date.
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: `Blog | ${siteConfig.name}`,
   description: `Guides and data about AI and machine learning jobs, drawn from the listings on ${siteConfig.name}.`,
