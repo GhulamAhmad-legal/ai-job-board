@@ -1,4 +1,4 @@
-AIJobs is a job board for people who want to work in artificial intelligence and at technology companies. Before you rely on any job board, it helps to know how its listings get there and how far to trust the labels. This page explains exactly how AIJobs works. As of October 17, 2026, the site lists about 6,100 open roles from 39 companies.
+CoreTechRoles is a job board for people who want to work in artificial intelligence and at technology companies. Before you rely on any job board, it helps to know how its listings get there and how far to trust the labels. This page explains exactly how CoreTechRoles works. As of October 17, 2026, the site lists about 6,122 open roles from 39 companies.
 
 ## Where the listings come from
 
@@ -10,13 +10,13 @@ Job descriptions keep the employer's original wording. We do not rewrite them. T
 
 ## How listings are kept current
 
-We refresh the listings regularly. Each time, new jobs are added, jobs that are still open are updated, and jobs an employer has removed are taken down from AIJobs.
+We refresh the listings regularly. Each time, new jobs are added, jobs that are still open are updated, and jobs an employer has removed are taken down from CoreTechRoles.
 
-A role that has been filled should disappear from AIJobs soon after it disappears from the employer's page, but there can be a gap. Always check the employer's page before you invest time in an application.
+A role that has been filled should disappear from CoreTechRoles soon after it disappears from the employer's page, but there can be a gap. Always check the employer's page before you invest time in an application.
 
 ## How salaries are shown
 
-AIJobs shows a salary only when the employer states one, either in the posting itself or in a pay field that some systems provide. We never estimate, average or guess pay. If a listing has no salary, you will see none.
+CoreTechRoles shows a salary only when the employer states one, either in the posting itself or in a pay field that some systems provide. We never estimate, average or guess pay. If a listing has no salary, you will see none.
 
 A few details are worth knowing:
 
@@ -24,6 +24,8 @@ A few details are worth knowing:
 - Coverage varies a lot by company and country. Employers in places with pay-transparency rules tend to publish ranges, and many others do not.
 - We only capture ranges stated in US dollars.
 - Ranges are shown in thousands of dollars per year, so a posting of $145,700 to $200,300 appears as $145K to $201K.
+
+To see what companies are actually paying across specific roles and experience levels, read our full data report on [The State of AI Hiring: Salaries, Skills, and Remote Work](/blog/the-state-of-ai-hiring).
 
 ## What counts as "Remote"
 
@@ -41,9 +43,9 @@ This is a simple rule, and it has limits. A role with a generic title, such as "
 
 - **Only 39 companies.** They are mostly US-based and mostly large or well-funded. This is a slice of the market, not the whole of it.
 - **Repeated roles.** When an employer lists the same role in several cities, each listing is counted separately.
-- **Not a market forecast.** The numbers describe what these companies have posted on a given day. They say little about hiring trends across the industry.
+- **Not a market forecast.** The numbers describe what these companies have posted on a given day. They say little about hiring trends across the industry. For a detailed breakdown of current compensation benchmarks and in-demand skills, see our analysis on [The State of AI Hiring](/blog/the-state-of-ai-hiring).
 
-Treat AIJobs as a place to find and compare openings, then confirm the details with the employer.
+Treat CoreTechRoles as a place to find and compare openings, then confirm the details with the employer.
 
 ## Corrections and removals
 
