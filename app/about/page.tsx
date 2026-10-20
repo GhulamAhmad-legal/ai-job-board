@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: "About AIJobs | The Premier AI Job Board",
-  description: "Learn about AIJobs — a focused job board connecting AI, Machine Learning, and Data Science professionals with top companies. Discover how we curate roles and who runs the platform.",
+  title: "About CoreTechRoles | The Premier Tech & AI Job Board",
+  description: "Learn about CoreTechRoles — a focused job board connecting AI, Machine Learning, and Data Science professionals with top companies. Discover how we curate roles and who runs the platform.",
 };
 
 export default function About() {
@@ -15,7 +15,7 @@ export default function About() {
         <div className="bg-[#00060C] px-8 py-12 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-blue-600"></div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-4">
-            About AIJobs
+            About CoreTechRoles
           </h1>
           <p className="text-gray-400 text-[16px] md:text-[18px] max-w-lg mx-auto">
             Connecting world-class talent with the companies building the future of Artificial Intelligence.
@@ -30,12 +30,12 @@ export default function About() {
           </p>
 
           <p>
-            <strong>AIJobs</strong> was built to solve this problem. We are a focused job board dedicated exclusively to Artificial Intelligence, Machine Learning, Data Science, and related roles. Our goal is simple: help talented professionals find high-quality AI opportunities faster, and help companies reach the right candidates more effectively.
+            <strong>CoreTechRoles</strong> was built to solve this problem. We are a focused job board dedicated exclusively to Artificial Intelligence, Machine Learning, Data Science, and related roles. Our goal is simple: help talented professionals find high-quality AI opportunities faster, and help companies reach the right candidates more effectively.
           </p>
 
           <h2 className="text-[22px] mt-10 mb-4">Our Mission</h2>
           <p>
-            We believe that the people building the next generation of AI systems deserve a better way to discover opportunities. AIJobs exists to cut through the noise and surface only relevant, high-quality roles from reputable companies in the AI ecosystem.
+            We believe that the people building the next generation of AI systems deserve a better way to discover opportunities. CoreTechRoles exists to cut through the noise and surface only relevant, high-quality roles from reputable companies in the AI ecosystem.
           </p>
 
           <h2 className="text-[22px] mt-10 mb-4">How We Source Jobs</h2>
@@ -53,12 +53,12 @@ export default function About() {
 
           <h2 className="text-[22px] mt-10 mb-4">For Employers</h2>
           <p>
-            Posting a role on AIJobs places your opening in front of a highly targeted audience of AI professionals actively looking for their next opportunity. We use structured data and programmatic SEO to help your listings reach the right people searching for AI careers.
+            Posting a role on CoreTechRoles places your opening in front of a highly targeted audience of AI professionals actively looking for their next opportunity. We use structured data and programmatic SEO to help your listings reach the right people searching for AI careers.
           </p>
 
-          <h2 className="text-[22px] mt-10 mb-4">Who Runs AIJobs</h2>
+          <h2 className="text-[22px] mt-10 mb-4">Who Runs CoreTechRoles</h2>
           <p>
-            AIJobs is operated by <strong>Ahmad Soft</strong>. The platform was created to serve the growing community of AI practitioners, researchers, and engineers. If you have questions, feedback, or need a listing corrected or removed, you can reach us anytime through our <Link href="/contact" className="text-blue-600 hover:underline font-medium">Contact page</Link>.
+            CoreTechRoles is operated by <strong>Ghulam Ahmad</strong>. The platform was created to serve the growing community of AI practitioners, researchers, and engineers. If you have questions, feedback, or need a listing corrected or removed, you can reach us anytime at <a href="mailto:ghulam.ahmad2@gmail.com" className="text-blue-600 hover:underline font-medium">ghulam.ahmad2@gmail.com</a> or through our <Link href="/contact" className="text-blue-600 hover:underline font-medium">Contact page</Link>.
           </p>
 
           <h2 className="text-[22px] mt-10 mb-4">Transparency & Trust</h2>

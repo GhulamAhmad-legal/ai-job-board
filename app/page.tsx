@@ -1,6 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import JobFeedClient from './JobFeedClient';
 import { cleanDescription } from './lib/cleanDescription';
+// Add this block to define the canonical URL for the homepage
+export const metadata = {
+  alternates: {
+    canonical: 'https://www.coretechroles.com',
+  },
+};
 
 export const revalidate = 3600;
 
