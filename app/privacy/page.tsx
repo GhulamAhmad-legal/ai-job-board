@@ -136,6 +136,16 @@ export default function PrivacyPage() {
         We may update this policy from time to time. The “Last updated” date at the top shows when it
         was last changed.
       </p>
+      <h2>Job alerts</h2>
+<p>
+  If you create a job alert, we collect your email address and the keywords, location and
+  remote-only preference you choose. We use them only to send you the alerts you asked for.
+  We email a confirmation link first, and we send alerts only after you click it. Every alert
+  email has a link to stop that alert, which deletes it and your email address for it. Alert
+  emails are delivered for us by our email provider, Resend. To have your data removed, use
+  the unsubscribe link or write to{' '}
+  <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>.
+</p>
 
       <h2>Contact us</h2>
       <p>
