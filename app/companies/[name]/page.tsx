@@ -20,6 +20,7 @@ type JobRow = {
   salary_min: number | null;
   salary_max: number | null;
   company_logo_url: string | null;
+  group_size: number | null;
 };
 
 // Safely read the curated profile (industry, description, domain) for a company.
@@ -48,9 +49,10 @@ async function fetchCompanyJobs(name: string): Promise<JobRow[]> {
   for (let from = 0; from < 10000; from += pageSize) {
     const { data, error } = await supabase
       .from('jobs')
-      .select('id, title, company, location, salary_min, salary_max, company_logo_url')
+      .select('id, title, company, location, salary_min, salary_max, company_logo_url, group_size')
       .ilike('company', safeName)
       .eq('status', 'active')
+      .eq('is_primary', true)
       .order('created_at', { ascending: false })
       .order('id', { ascending: true })
       .range(from, from + pageSize - 1);
@@ -164,6 +166,9 @@ export default async function CompanyPage({
                       </h3>
                       <div className="flex flex-wrap items-center gap-3 text-[14px]">
                         {locationLabel && <span className="text-gray-500 font-medium">{locationLabel}</span>}
+                        {(job.group_size ?? 1) > 1 && (
+                          <span className="text-gray-400 font-medium">+{(job.group_size ?? 1) - 1} more locations</span>
+                        )}
                         {hasSalary && (
                           <span className="text-green-700 font-bold bg-green-50 px-2 py-0.5 rounded border border-green-100">
                             ${job.salary_min}K{job.salary_max !== job.salary_min ? ` – $${job.salary_max}K` : ''}{' '}

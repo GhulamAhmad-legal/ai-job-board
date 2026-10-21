@@ -26,6 +26,7 @@ async function fetchAllActiveJobs(): Promise<JobRow[]> {
       .from('jobs')
       .select('id, company, created_at')
       .eq('status', 'active')
+      .eq('is_primary', true)
       .order('created_at', { ascending: false })
       .order('id', { ascending: true }) // stable order for pagination
       .range(from, from + pageSize - 1);

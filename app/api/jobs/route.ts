@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from('jobs')
     .select('*', { count: 'exact' })
-    .eq('status', 'active');
+    .eq('status', 'active')
+    .eq('is_primary', true);
 
   // Fully remote roles are tagged "Remote" by the scraper.
   if (remote) query = query.filter('tags', 'cs', JSON.stringify(['Remote']));

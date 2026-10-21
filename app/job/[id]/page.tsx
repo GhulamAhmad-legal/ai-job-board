@@ -43,6 +43,32 @@ const getJob = cache(async (id: string) => {
   return data;
 });
 
+// The primary listing of the same role (used as the canonical page for the other locations).
+const getPrimary = cache(async (groupKey: string, company: string) => {
+  const { data } = await supabase
+    .from('jobs')
+    .select('id')
+    .eq('group_key', groupKey)
+    .eq('company', company)
+    .eq('status', 'active')
+    .eq('is_primary', true)
+    .maybeSingle();
+  return data;
+});
+
+// Every active location of the same role, each with its own apply link.
+const getSiblings = cache(async (groupKey: string, company: string) => {
+  const { data } = await supabase
+    .from('jobs')
+    .select('id, location, apply_url')
+    .eq('group_key', groupKey)
+    .eq('company', company)
+    .eq('status', 'active')
+    .order('location', { ascending: true })
+    .limit(40);
+  return data ?? [];
+});
+
 export async function generateMetadata({
   params,
 }: {
@@ -70,12 +96,23 @@ export async function generateMetadata({
     : '';
   const remoteText = /^remote(\s+-\s+|\s*,\s*)/i.test(job.location ?? '') ? ' Fully remote role.' : '';
   const description = `${cleanTitle} at ${job.company}${location ? ` in ${location}` : ''}.${remoteText}${salaryText} Read the full description and apply on the employer’s website.`;
-  const url = `${baseUrl}/job/${id}`;
+  // A role posted in several locations has one main page; the others point to it and stay out of search results.
+  let canonicalId = id;
+  let duplicate = false;
+  if (job.is_primary === false && job.group_key) {
+    const primary = await getPrimary(job.group_key, job.company);
+    if (primary) {
+      canonicalId = primary.id;
+      duplicate = true;
+    }
+  }
+  const url = `${baseUrl}/job/${canonicalId}`;
 
   return {
     title,
     description,
     alternates: { canonical: url },
+    ...(duplicate ? { robots: { index: false, follow: true } } : {}),
     openGraph: { title, description, url, type: 'website', siteName: siteConfig.name },
   };
 }
@@ -107,12 +144,21 @@ export default async function JobPage({
   const isFullyRemote = !!remoteMatch;
   const remoteRegion = remoteMatch ? remoteMatch[1].trim() : '';
 
+  // Other locations of the same role (only when the employer posted it in several places).
+  const siblings =
+    (job.group_size ?? 1) > 1 && job.group_key ? await getSiblings(job.group_key, job.company) : [];
+
+  const splitPlaces = (text: string) =>
+    String(text ?? '')
+      .split(/[;|]/)
+      .map((l) => l.trim())
+      .filter((l) => l && !/^remote/i.test(l));
+
   const locations = isFullyRemote
     ? []
-    : rawLocation
-        .split(/[;|]/)
-        .map((l) => l.trim())
-        .filter((l) => l && !/^remote/i.test(l));
+    : siblings.length > 1
+      ? Array.from(new Set(siblings.flatMap((sib) => splitPlaces(sib.location ?? '')))).slice(0, 25)
+      : splitPlaces(rawLocation);
 
   const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org/',
@@ -224,6 +270,31 @@ export default async function JobPage({
             </a>
             )}
           </div>
+
+          {siblings.length > 1 && (
+            <div className="px-8 py-6 border-b border-gray-100 bg-gray-50/50">
+              <h2 className="text-[16px] font-extrabold text-gray-900 mb-3">
+                This role is open in {siblings.length} locations
+              </h2>
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {siblings.map((sib) => (
+                  <li key={sib.id} className="text-[14px] text-gray-700 flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-lg px-3 py-2">
+                    <span className="font-medium">{(sib.location ?? '').split(';')[0] || 'Location not listed'}</span>
+                    {sib.apply_url && (
+                      <a
+                        href={sib.apply_url}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="font-bold text-blue-600 hover:text-blue-700 shrink-0"
+                      >
+                        Apply →
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="p-8 md:p-12 bg-white">
             <h2 className="text-[20px] font-extrabold text-gray-900 mb-6">About the role</h2>

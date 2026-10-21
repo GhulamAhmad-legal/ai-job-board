@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import Link from 'next/link';
 
 const PAGE_SIZE = 150;
@@ -20,6 +21,12 @@ function hasSalary(job: any) {
 function isFullyRemote(job: any) {
   if (Array.isArray(job.tags) && job.tags.includes('Remote')) return true;
   return /^remote(\s+-\s+|\s*,\s*)/i.test(job.location ?? '');
+}
+
+// Location text for a card. Roles posted in several places show "+N more".
+function locationLabel(job: any) {
+  const first = (job.location ?? '').split(';')[0];
+  return (job.group_size ?? 1) > 1 ? `${first} +${job.group_size - 1} more` : first;
 }
 
 interface Props {
@@ -44,7 +51,12 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
   
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [alertEmail, setAlertEmail] = useState('');
-  const [alertSubmitted, setAlertSubmitted] = useState(false);
+  const [alertKeywords, setAlertKeywords] = useState('');
+  const [alertLocation, setAlertLocation] = useState('');
+  const [alertRemote, setAlertRemote] = useState(false);
+  const [alertTrap, setAlertTrap] = useState(''); // hidden field; real people leave it empty
+  const [alertStatus, setAlertStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
+  const [alertError, setAlertError] = useState('');
 
   // Pagination State (page 0 = newest 150; duplicates of the first screen are skipped)
   const [page, setPage] = useState(0);
@@ -120,6 +132,50 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remoteOnly, searchTitle, searchLocation]);
+
+  const openAlertModal = () => {
+    setAlertKeywords(searchTitle);
+    setAlertLocation(searchLocation);
+    setAlertRemote(remoteOnly);
+    setAlertStatus('idle');
+    setAlertError('');
+    setShowAlertModal(true);
+  };
+
+  const closeAlertModal = () => {
+    setShowAlertModal(false);
+    setAlertStatus('idle');
+    setAlertError('');
+  };
+
+  const submitAlert = async (e: FormEvent) => {
+    e.preventDefault();
+    setAlertStatus('sending');
+    setAlertError('');
+    try {
+      const res = await fetch('/api/alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: alertEmail,
+          keywords: alertKeywords,
+          location: alertLocation,
+          remoteOnly: alertRemote,
+          website: alertTrap,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAlertStatus('error');
+        setAlertError(data.error || 'Something went wrong. Please try again.');
+        return;
+      }
+      setAlertStatus('done');
+    } catch {
+      setAlertStatus('error');
+      setAlertError('Network problem. Please try again.');
+    }
+  };
 
   // Load More (uses the same filters, skips jobs already on screen)
   const loadMoreJobs = async () => {
@@ -198,7 +254,7 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
              </div>
              
              {/* Job Alert Button */}
-             <button onClick={() => setShowAlertModal(true)} className="flex items-center gap-2 text-indigo-600 font-bold text-[14px] hover:text-indigo-800 transition-colors">
+             <button onClick={openAlertModal} className="flex items-center gap-2 text-indigo-600 font-bold text-[14px] hover:text-indigo-800 transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
@@ -243,7 +299,7 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
                 </div>
                 <h2 className="text-[17px] font-extrabold mb-3 text-gray-900">{job.title}</h2>
                 <div className="flex gap-2">
-                  <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 border border-indigo-200 truncate">{(job.location ?? '').split(';')[0]}</span>
+                  <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 border border-indigo-200 truncate">{locationLabel(job)}</span>
                   {hasSalary(job) && (
                     <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200">${job.salary_min}K – ${job.salary_max}K</span>
                   )}
@@ -292,7 +348,7 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
                  {/* Location and Salary Pills */}
                  <div className="flex flex-wrap items-center gap-3 mb-8">
                    <span className="bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-gray-200">
-                     {(activeJob.location ?? '').split(';')[0]}
+                     {locationLabel(activeJob)}
                    </span>
                    {hasSalary(activeJob) && (
                      <span className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg text-[14px] font-bold border border-emerald-200">
@@ -318,35 +374,99 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
       {/* Job Alert Modal */}
       {showAlertModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative">
-            <button onClick={() => { setShowAlertModal(false); setAlertSubmitted(false); }} className="absolute top-5 right-5 text-gray-400 hover:text-gray-600">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative max-h-[92vh] overflow-y-auto">
+            <button onClick={closeAlertModal} aria-label="Close" className="absolute top-5 right-5 text-gray-400 hover:text-gray-600">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            
-            {!alertSubmitted ? (
+
+            {alertStatus !== 'done' ? (
               <>
                 <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-5">
                   <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-extrabold text-gray-900 mb-2">Never miss a role</h3>
-                <p className="text-gray-500 mb-6 text-[15px]">Get weekly emails with the latest AI and remote tech jobs matching your search.</p>
-                
-                <form onSubmit={(e) => { e.preventDefault(); setAlertSubmitted(true); }} className="flex flex-col gap-4">
-                  <input 
-                    type="email" 
-                    required 
-                    placeholder="Enter your email address" 
-                    className="w-full border border-gray-300 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 outline-none transition-all text-[15px]"
-                    value={alertEmail}
-                    onChange={(e) => setAlertEmail(e.target.value)}
+                <h3 className="text-2xl font-extrabold text-gray-900 mb-2">Get an email when new roles match</h3>
+                <p className="text-gray-500 mb-6 text-[15px]">
+                  Tell us what you are looking for. We will email you new matching jobs, at most once a day, and only
+                  after you confirm your address.
+                </p>
+
+                <form onSubmit={submitAlert} className="flex flex-col gap-4">
+                  <label className="text-[13px] font-bold text-gray-700">
+                    Email
+                    <input
+                      type="email"
+                      required
+                      maxLength={254}
+                      autoComplete="email"
+                      placeholder="you@example.com"
+                      className="mt-1 w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 outline-none transition-all text-[15px] font-normal"
+                      value={alertEmail}
+                      onChange={(e) => setAlertEmail(e.target.value)}
+                    />
+                  </label>
+                  <label className="text-[13px] font-bold text-gray-700">
+                    Keywords <span className="font-normal text-gray-400">(optional)</span>
+                    <input
+                      type="text"
+                      maxLength={80}
+                      placeholder="e.g. machine learning engineer"
+                      className="mt-1 w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 outline-none transition-all text-[15px] font-normal"
+                      value={alertKeywords}
+                      onChange={(e) => setAlertKeywords(e.target.value)}
+                    />
+                  </label>
+                  <label className="text-[13px] font-bold text-gray-700">
+                    Location <span className="font-normal text-gray-400">(optional)</span>
+                    <input
+                      type="text"
+                      maxLength={60}
+                      placeholder="e.g. London"
+                      className="mt-1 w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 outline-none transition-all text-[15px] font-normal"
+                      value={alertLocation}
+                      onChange={(e) => setAlertLocation(e.target.value)}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-[14px] font-bold text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={alertRemote}
+                      onChange={(e) => setAlertRemote(e.target.checked)}
+                      className="w-4 h-4 accent-indigo-600"
+                    />
+                    Fully remote roles only
+                  </label>
+
+                  {/* Spam trap: hidden from people, filled in by bots */}
+                  <input
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    className="hidden"
+                    value={alertTrap}
+                    onChange={(e) => setAlertTrap(e.target.value)}
                   />
-                  <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-md transition-all">
-                    Subscribe to Alerts
+
+                  {alertStatus === 'error' && (
+                    <p role="alert" className="text-[14px] font-bold text-red-600">{alertError}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={alertStatus === 'sending'}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-bold py-3.5 rounded-xl shadow-md transition-all"
+                  >
+                    {alertStatus === 'sending' ? 'Sending…' : 'Create alert'}
                   </button>
+                  <p className="text-[12px] text-gray-400 leading-snug">
+                    We use your email only to send these alerts, and every email has an unsubscribe link. See our{' '}
+                    <Link href="/privacy" className="underline">Privacy Policy</Link>.
+                  </p>
                 </form>
               </>
             ) : (
@@ -356,8 +476,11 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-extrabold text-gray-900 mb-2">You're all set!</h3>
-                <p className="text-gray-500 text-[15px]">We'll send the best AI roles straight to <strong>{alertEmail}</strong>.</p>
+                <h3 className="text-2xl font-extrabold text-gray-900 mb-2">Check your inbox</h3>
+                <p className="text-gray-500 text-[15px]">
+                  We sent a confirmation link to <strong>{alertEmail}</strong>. Your alert starts after you click it. If it
+                  is not there in a few minutes, check your spam folder.
+                </p>
               </div>
             )}
           </div>

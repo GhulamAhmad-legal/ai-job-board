@@ -37,6 +37,7 @@ async function fetchActiveCompanyRows(): Promise<{ company: string; logo: string
       .from('jobs')
       .select('company, company_logo_url')
       .eq('status', 'active')
+      .eq('is_primary', true)
       .order('id', { ascending: true })
       .range(from, from + pageSize - 1);
 

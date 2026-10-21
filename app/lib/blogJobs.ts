@@ -25,7 +25,8 @@ export async function getJobsForWidget(w: JobWidget, limit = 6): Promise<JobCard
     let q = supabase
       .from('jobs')
       .select('id, title, company, location, salary_min, salary_max')
-      .eq('status', 'active');
+      .eq('status', 'active')
+      .eq('is_primary', true);
 
     if (w.tags?.length) q = q.filter('tags', 'cs', JSON.stringify(w.tags));
     if (w.titleContains) q = q.ilike('title', `%${clean(w.titleContains)}%`);

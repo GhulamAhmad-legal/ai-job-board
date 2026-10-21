@@ -1,14 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Metadata } from 'next';
 import JobFeedClient from './JobFeedClient';
 import { cleanDescription } from './lib/cleanDescription';
-// Add this block to define the canonical URL for the homepage
-export const metadata = {
-  alternates: {
-    canonical: 'https://www.coretechroles.com',
-  },
-};
 
 export const revalidate = 3600;
+
+// Canonical for the homepage only (other pages set their own).
+export const metadata: Metadata = { alternates: { canonical: '/' } };
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,7 +50,8 @@ export default async function Home() {
   const { count } = await supabase
     .from('jobs')
     .select('id', { count: 'exact', head: true })
-    .eq('status', 'active');
+    .eq('status', 'active')
+    .eq('is_primary', true);
 
   // 1. Prefer jobs tagged "AI", spread across companies.
   // `tags` is jsonb, so match with the raw "cs" (contains) operator and a JSON array.
@@ -61,6 +60,7 @@ export default async function Home() {
     .from('jobs')
     .select('id, company, created_at')
     .eq('status', 'active')
+    .eq('is_primary', true)
     .filter('tags', 'cs', JSON.stringify(['AI']))
     .order('created_at', { ascending: false })
     .limit(POOL_SIZE);
@@ -75,6 +75,7 @@ export default async function Home() {
       .from('jobs')
       .select('id, company, created_at')
       .eq('status', 'active')
+    .eq('is_primary', true)
       .order('created_at', { ascending: false })
       .limit(POOL_SIZE);
 
