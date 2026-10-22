@@ -153,6 +153,15 @@ export default async function JobPage({
   const employmentType = inferEmploymentType(job.title, job.description ?? '');
   const companyDomain = getCompanyMeta(job.company).domain;
 
+  // Rolling expiry: 30 days after the scraper last saw this job still listed.
+  const VALID_DAYS = 30;
+  const lastSeen = new Date(job.last_seen_at ?? job.updated_at ?? job.created_at ?? Date.now());
+  const validThroughDate = new Date(lastSeen.getTime() + VALID_DAYS * 86400000);
+  const validThrough =
+    !isNaN(validThroughDate.getTime()) && validThroughDate.getTime() > Date.now()
+      ? validThroughDate.toISOString()
+      : undefined;
+
   // Google also requires a way to apply, so listings without an apply link get no JobPosting markup.
   const jsonLd: Record<string, unknown> | null = hasValidLocation && job.apply_url
     ? {
@@ -160,7 +169,8 @@ export default async function JobPage({
         '@type': 'JobPosting',
         title: job.title,
         description: cleanDescription(job.description ?? ''),
-        datePosted: job.created_at,
+        datePosted: job.first_seen_at ?? job.created_at,
+        ...(validThrough ? { validThrough } : {}),
         directApply: false,
         identifier: { '@type': 'PropertyValue', name: job.company, value: String(job.id) },
         ...(employmentType ? { employmentType } : {}),

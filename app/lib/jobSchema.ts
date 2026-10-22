@@ -41,6 +41,20 @@ const COUNTRIES: Record<string, string> = {
   thailand: 'TH', indonesia: 'ID', malaysia: 'MY', pakistan: 'PK',
 };
 
+// Full country names, used for the Country objects in applicantLocationRequirements.
+const COUNTRY_NAMES: Record<string, string> = {
+  US: 'USA', CA: 'Canada', GB: 'United Kingdom', IE: 'Ireland', DE: 'Germany', FR: 'France',
+  ES: 'Spain', IT: 'Italy', NL: 'Netherlands', BE: 'Belgium', CH: 'Switzerland', AT: 'Austria',
+  SE: 'Sweden', NO: 'Norway', DK: 'Denmark', FI: 'Finland', PL: 'Poland', PT: 'Portugal',
+  CZ: 'Czechia', RO: 'Romania', GR: 'Greece', HU: 'Hungary', EE: 'Estonia', LT: 'Lithuania',
+  LV: 'Latvia', LU: 'Luxembourg', UA: 'Ukraine', IL: 'Israel', IN: 'India', JP: 'Japan',
+  KR: 'South Korea', SG: 'Singapore', AU: 'Australia', NZ: 'New Zealand', BR: 'Brazil',
+  MX: 'Mexico', AR: 'Argentina', CO: 'Colombia', CL: 'Chile', PE: 'Peru', CR: 'Costa Rica',
+  CN: 'China', TW: 'Taiwan', HK: 'Hong Kong', AE: 'United Arab Emirates', SA: 'Saudi Arabia',
+  TR: 'Turkey', ZA: 'South Africa', NG: 'Nigeria', KE: 'Kenya', EG: 'Egypt', PH: 'Philippines',
+  VN: 'Vietnam', TH: 'Thailand', ID: 'Indonesia', MY: 'Malaysia', PK: 'Pakistan',
+};
+
 // Well-known cities where the country is obvious. US cities also carry their state.
 const US_CITIES: Record<string, string> = {
   'san francisco': 'CA', 'mountain view': 'CA', sunnyvale: 'CA', 'san jose': 'CA', 'palo alto': 'CA',
@@ -184,18 +198,19 @@ export function remoteTargets(regionText: string): Target[] {
       const countryName = p.country === 'US' ? 'USA' : 'Canada';
       add({ '@type': 'State', name: `${stateName}, ${countryName}` });
     } else {
-      add({ '@type': 'Country', name: p.country });
+      add({ '@type': 'Country', name: COUNTRY_NAMES[p.country] ?? p.country });
     }
   }
   return out.slice(0, 10);
 }
 
-// Only say a job is full-time / an internship etc. when the posting says so.
-export function inferEmploymentType(title: string, description: string): string | undefined {
+// Picks the employment type from the title/description. Falls back to FULL_TIME when nothing says otherwise.
+export function inferEmploymentType(title: string, description: string): string {
   if (/\b(intern|interns|internship|co-?op)\b/i.test(title)) return 'INTERN';
   if (/\b(contractor|contract|freelance)\b/i.test(title)) return 'CONTRACTOR';
   if (/\b(temporary|temp)\b/i.test(title)) return 'TEMPORARY';
-  if (/\bpart[- ]time\b/i.test(title)) return 'PART_TIME';
-  if (/\bfull[- ]time\b/i.test(description)) return 'FULL_TIME';
-  return undefined;
+  if (/\bpart[- ]?time\b/i.test(title)) return 'PART_TIME';
+  if (/\bfull[- ]?time\b|\bpermanent\b/i.test(description)) return 'FULL_TIME';
+  // Fallback: the title shows no other type, so assume the usual case.
+  return 'FULL_TIME';
 }
