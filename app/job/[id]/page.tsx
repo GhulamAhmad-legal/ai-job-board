@@ -3,10 +3,11 @@ import { getSiteUrl } from '../../lib/siteUrl';
 import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { cleanDescription } from '../../lib/cleanDescription';
 import { officePlaces, remoteTargets, inferEmploymentType, allInUS } from '../../lib/jobSchema';
 import { getCompanyMeta } from '../../lib/companiesData';
+import { jobPath, parseJobRef } from '../../lib/jobSlug';
 
 export const revalidate = 3600;
 
@@ -18,13 +19,12 @@ const supabase = createClient(
 const baseUrl = getSiteUrl();
 
 // One query shared by generateMetadata and the page. Inactive jobs 404.
-const getJob = cache(async (id: string) => {
-  const { data } = await supabase
-    .from('jobs')
-    .select('*')
-    .eq('id', id)
-    .eq('status', 'active')
-    .maybeSingle();
+// Takes the raw URL segment: a short slug (…-4821), a long slug, or a bare UUID.
+const getJob = cache(async (param: string) => {
+  const ref = parseJobRef(param);
+  if (!ref) return null;
+  const query = supabase.from('jobs').select('*').eq('status', 'active');
+  const { data } = await (ref.kind === 'seq' ? query.eq('seq', ref.value) : query.eq('id', ref.value)).maybeSingle();
   return data;
 });
 
@@ -32,7 +32,7 @@ const getJob = cache(async (id: string) => {
 const getPrimary = cache(async (groupKey: string, company: string) => {
   const { data } = await supabase
     .from('jobs')
-    .select('id')
+    .select('id, seq, title, company')
     .eq('group_key', groupKey)
     .eq('company', company)
     .eq('status', 'active')
@@ -59,8 +59,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const job = await getJob(id);
+  const { id: rawId } = await params;
+  const job = await getJob(rawId);
 
   if (!job) return { title: `Job Not Found | ${siteConfig.name}`, robots: { index: false } };
 
@@ -82,16 +82,16 @@ export async function generateMetadata({
   const remoteText = /^remote(\s+-\s+|\s*,\s*)/i.test(job.location ?? '') ? ' Fully remote role.' : '';
   const description = `${cleanTitle} at ${job.company}${location ? ` in ${location}` : ''}.${remoteText}${salaryText} Read the full description and apply on the employer’s website.`;
   // A role posted in several locations has one main page; the others point to it and stay out of search results.
-  let canonicalId = id;
+  let canonicalPath = jobPath(job);
   let duplicate = false;
   if (job.is_primary === false && job.group_key) {
     const primary = await getPrimary(job.group_key, job.company);
     if (primary) {
-      canonicalId = primary.id;
+      canonicalPath = jobPath(primary);
       duplicate = true;
     }
   }
-  const url = `${baseUrl}/job/${canonicalId}`;
+  const url = `${baseUrl}${canonicalPath}`;
 
   return {
     title,
@@ -107,10 +107,18 @@ export default async function JobPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const job = await getJob(id);
+  const { id: rawId } = await params;
+  const job = await getJob(rawId);
 
   if (!job) notFound();
+
+  // Old /job/<uuid> links (and out-of-date slugs) 301 to the one canonical URL.
+  const canonicalPath = jobPath(job);
+  let currentId = rawId;
+  try {
+    currentId = decodeURIComponent(rawId);
+  } catch {}
+  if (`/job/${currentId}` !== canonicalPath) permanentRedirect(canonicalPath);
 
   const locationLabel = (job.location ?? '').split(';')[0];
 

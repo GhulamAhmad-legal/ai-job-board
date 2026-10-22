@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import Link from 'next/link';
+import { jobPath } from './lib/jobSlug';
 
 const PAGE_SIZE = 150;
 
@@ -281,7 +282,7 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
             {filteredJobs.map((job) => (
               <Link
                 key={job.id}
-                href={`/job/${job.id}`}
+                href={jobPath(job)}
                 onClick={(e) => {
                   // Desktop: preview in the side panel. Mobile: open the job page.
                   if (window.matchMedia('(min-width: 1024px)').matches) {

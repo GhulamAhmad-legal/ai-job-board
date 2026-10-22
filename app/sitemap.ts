@@ -2,9 +2,11 @@ import { getSiteUrl } from './lib/siteUrl';
 import { getPosts } from './lib/blogIndex';
 import { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { jobPath } from './lib/jobSlug';
 
-// Build the sitemap fresh on every request, so new scraper jobs appear without a redeploy.
-export const dynamic = 'force-dynamic';
+// Rebuilt at most once an hour: new scraper jobs show up without a redeploy, and crawlers
+// don't trigger a full Supabase paging run on every hit.
+export const revalidate = 3600;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,7 +16,7 @@ const supabase = createClient(
 // Set NEXT_PUBLIC_SITE_URL in Vercel once you have your custom domain.
 const baseUrl = getSiteUrl();
 
-type JobRow = { id: string; company: string; created_at: string | null };
+type JobRow = { id: string; seq: number | null; title: string; company: string; created_at: string | null };
 
 // Supabase returns at most 1000 rows per request, so page through them all.
 async function fetchAllActiveJobs(): Promise<JobRow[]> {
@@ -24,7 +26,7 @@ async function fetchAllActiveJobs(): Promise<JobRow[]> {
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await supabase
       .from('jobs')
-      .select('id, company, created_at')
+      .select('id, seq, title, company, created_at')
       .eq('status', 'active')
       .eq('is_primary', true)
       .order('created_at', { ascending: false })
@@ -43,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const jobs = await fetchAllActiveJobs();
 
   const jobUrls: MetadataRoute.Sitemap = jobs.map((job) => ({
-    url: `${baseUrl}/job/${job.id}`,
+    url: `${baseUrl}${jobPath(job)}`,
     ...(job.created_at ? { lastModified: new Date(job.created_at) } : {}),
   }));
 

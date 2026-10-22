@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getCompanyMeta } from '../../lib/companiesData';
+import { jobPath } from '../../lib/jobSlug';
 
 export const revalidate = 3600;
 
@@ -14,6 +15,7 @@ const supabase = createClient(
 
 type JobRow = {
   id: string;
+  seq: number | null;
   title: string;
   company: string;
   location: string | null;
@@ -49,7 +51,7 @@ async function fetchCompanyJobs(name: string): Promise<JobRow[]> {
   for (let from = 0; from < 10000; from += pageSize) {
     const { data, error } = await supabase
       .from('jobs')
-      .select('id, title, company, location, salary_min, salary_max, company_logo_url, group_size')
+      .select('id, seq, title, company, location, salary_min, salary_max, company_logo_url, group_size')
       .ilike('company', safeName)
       .eq('status', 'active')
       .eq('is_primary', true)
@@ -158,7 +160,7 @@ export default async function CompanyPage({
               const locationLabel = (job.location ?? '').split(';')[0];
 
               return (
-                <Link href={`/job/${job.id}`} key={job.id} className="block group hover:bg-blue-50/30 transition-colors">
+                <Link href={jobPath(job)} key={job.id} className="block group hover:bg-blue-50/30 transition-colors">
                   <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div>
                       <h3 className="text-[17px] font-extrabold text-gray-900 group-hover:text-blue-600 transition-colors mb-1.5">
