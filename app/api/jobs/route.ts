@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { cleanDescription } from '../../lib/cleanDescription';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,6 +7,10 @@ const supabase = createClient(
 );
 
 const PAGE_SIZE = 150;
+
+// Same columns the homepage sends. Descriptions are fetched on demand from /api/job-description.
+const FEED_COLUMNS =
+  'id, seq, title, company, location, salary_min, salary_max, company_logo_url, apply_url, created_at, tags, group_size';
 
 // Strip characters that have special meaning inside a PostgREST filter string.
 function clean(input: string | null, max = 80) {
@@ -28,7 +31,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from('jobs')
-    .select('*', { count: 'exact' })
+    .select(FEED_COLUMNS, { count: 'exact' })
     .eq('status', 'active')
     .eq('is_primary', true);
 
@@ -46,10 +49,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ jobs: [], total: 0 }, { status: 500 });
   }
 
-  const jobs = (data ?? []).map((j) => ({
-    ...j,
-    description: cleanDescription(j.description ?? ''),
-  }));
+  const jobs = data ?? [];
 
   return NextResponse.json(
     { jobs, total: count ?? jobs.length },
