@@ -4,7 +4,7 @@
 // When we can't work out a valid place, the helpers return nothing and the page leaves the JobPosting
 // markup out, rather than sending Google something invalid.
 
-type Parsed = { locality?: string; region?: string; country?: string };
+export type Parsed = { locality?: string; region?: string; country?: string };
 
 const US_STATES: Record<string, string> = {
   AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado',
@@ -25,6 +25,8 @@ const CA_PROVINCES: Record<string, string> = {
   ON: 'Ontario', PE: 'Prince Edward Island', QC: 'Quebec', SK: 'Saskatchewan', YT: 'Yukon',
 };
 
+// Text -> ISO country code. Includes 3-letter codes (IND, CAN) and the 2-letter codes that
+// can't be confused with a US state or Canadian province (IE, GB, JP...).
 const COUNTRIES: Record<string, string> = {
   'united states': 'US', 'united states of america': 'US', usa: 'US', us: 'US', 'u.s.': 'US', 'u.s.a.': 'US',
   canada: 'CA', 'united kingdom': 'GB', uk: 'GB', 'u.k.': 'GB', 'great britain': 'GB', england: 'GB',
@@ -39,9 +41,17 @@ const COUNTRIES: Record<string, string> = {
   'united arab emirates': 'AE', uae: 'AE', 'saudi arabia': 'SA', turkey: 'TR', 'türkiye': 'TR',
   'south africa': 'ZA', nigeria: 'NG', kenya: 'KE', egypt: 'EG', philippines: 'PH', vietnam: 'VN',
   thailand: 'TH', indonesia: 'ID', malaysia: 'MY', pakistan: 'PK',
+  serbia: 'RS', qatar: 'QA', bulgaria: 'BG', croatia: 'HR', slovakia: 'SK', slovenia: 'SI',
+  iceland: 'IS', malta: 'MT', cyprus: 'CY',
+  // 3-letter codes
+  ind: 'IN', can: 'CA', gbr: 'GB', deu: 'DE', fra: 'FR', irl: 'IE', jpn: 'JP', kor: 'KR', sgp: 'SG',
+  aus: 'AU', bra: 'BR', mex: 'MX', nld: 'NL', che: 'CH', swe: 'SE', pol: 'PL', isr: 'IL', are: 'AE',
+  qat: 'QA',
+  // 2-letter codes that don't clash with US states / Canadian provinces
+  ie: 'IE', gb: 'GB', jp: 'JP', kr: 'KR', sg: 'SG', au: 'AU', nz: 'NZ', br: 'BR', mx: 'MX', ae: 'AE', fr: 'FR',
 };
 
-// Full country names, used for the Country objects in applicantLocationRequirements.
+// ISO code -> the name Google expects in Country objects (applicantLocationRequirements).
 const COUNTRY_NAMES: Record<string, string> = {
   US: 'USA', CA: 'Canada', GB: 'United Kingdom', IE: 'Ireland', DE: 'Germany', FR: 'France',
   ES: 'Spain', IT: 'Italy', NL: 'Netherlands', BE: 'Belgium', CH: 'Switzerland', AT: 'Austria',
@@ -53,31 +63,46 @@ const COUNTRY_NAMES: Record<string, string> = {
   CN: 'China', TW: 'Taiwan', HK: 'Hong Kong', AE: 'United Arab Emirates', SA: 'Saudi Arabia',
   TR: 'Turkey', ZA: 'South Africa', NG: 'Nigeria', KE: 'Kenya', EG: 'Egypt', PH: 'Philippines',
   VN: 'Vietnam', TH: 'Thailand', ID: 'Indonesia', MY: 'Malaysia', PK: 'Pakistan',
+  RS: 'Serbia', QA: 'Qatar', BG: 'Bulgaria', HR: 'Croatia', SK: 'Slovakia', SI: 'Slovenia',
+  IS: 'Iceland', MT: 'Malta', CY: 'Cyprus',
 };
 
 // Well-known cities where the country is obvious. US cities also carry their state.
 const US_CITIES: Record<string, string> = {
   'san francisco': 'CA', 'mountain view': 'CA', sunnyvale: 'CA', 'san jose': 'CA', 'palo alto': 'CA',
   'menlo park': 'CA', 'redwood city': 'CA', 'santa clara': 'CA', 'los angeles': 'CA', 'san diego': 'CA',
-  oakland: 'CA', irvine: 'CA', 'santa monica': 'CA', fremont: 'CA', 'new york': 'NY', 'new york city': 'NY',
-  brooklyn: 'NY', seattle: 'WA', bellevue: 'WA', kirkland: 'WA', austin: 'TX', dallas: 'TX', houston: 'TX',
-  boston: 'MA', chicago: 'IL', denver: 'CO', atlanta: 'GA', miami: 'FL', phoenix: 'AZ', pittsburgh: 'PA',
-  philadelphia: 'PA', 'salt lake city': 'UT', detroit: 'MI', raleigh: 'NC', nashville: 'TN',
+  oakland: 'CA', irvine: 'CA', 'santa monica': 'CA', fremont: 'CA', 'san mateo': 'CA', 'foster city': 'CA',
+  'south san francisco': 'CA', cupertino: 'CA', pasadena: 'CA', 'el segundo': 'CA',
+  'new york': 'NY', 'new york city': 'NY', brooklyn: 'NY', seattle: 'WA', bellevue: 'WA', kirkland: 'WA',
+  austin: 'TX', dallas: 'TX', houston: 'TX', boston: 'MA', chicago: 'IL', denver: 'CO', boulder: 'CO',
+  atlanta: 'GA', miami: 'FL', phoenix: 'AZ', tempe: 'AZ', pittsburgh: 'PA', philadelphia: 'PA',
+  'salt lake city': 'UT', detroit: 'MI', raleigh: 'NC', nashville: 'TN', memphis: 'TN', southaven: 'MS',
   minneapolis: 'MN', 'las vegas': 'NV',
 };
 
 const WORLD_CITIES: Record<string, string> = {
   london: 'GB', manchester: 'GB', edinburgh: 'GB', dublin: 'IE', paris: 'FR', berlin: 'DE', munich: 'DE',
-  hamburg: 'DE', amsterdam: 'NL', zurich: 'CH', 'zürich': 'CH', geneva: 'CH', stockholm: 'SE',
-  copenhagen: 'DK', oslo: 'NO', helsinki: 'FI', warsaw: 'PL', madrid: 'ES', barcelona: 'ES', lisbon: 'PT',
-  milan: 'IT', rome: 'IT', vienna: 'AT', prague: 'CZ', brussels: 'BE', 'tel aviv': 'IL', tokyo: 'JP',
-  osaka: 'JP', seoul: 'KR', singapore: 'SG', bengaluru: 'IN', bangalore: 'IN', hyderabad: 'IN',
-  mumbai: 'IN', delhi: 'IN', 'new delhi': 'IN', pune: 'IN', gurgaon: 'IN', gurugram: 'IN', sydney: 'AU',
+  hamburg: 'DE', leonberg: 'DE', amsterdam: 'NL', zurich: 'CH', 'zürich': 'CH', geneva: 'CH',
+  stockholm: 'SE', copenhagen: 'DK', oslo: 'NO', helsinki: 'FI', warsaw: 'PL', madrid: 'ES',
+  barcelona: 'ES', lisbon: 'PT', milan: 'IT', rome: 'IT', vienna: 'AT', prague: 'CZ', brussels: 'BE',
+  belgrade: 'RS', budapest: 'HU', bucharest: 'RO', athens: 'GR', tallinn: 'EE', kyiv: 'UA',
+  istanbul: 'TR', 'tel aviv': 'IL', herzliya: 'IL', tokyo: 'JP', yokohama: 'JP', osaka: 'JP', seoul: 'KR',
+  singapore: 'SG', bengaluru: 'IN', bangalore: 'IN', hyderabad: 'IN', mumbai: 'IN', delhi: 'IN',
+  'new delhi': 'IN', pune: 'IN', chennai: 'IN', gurgaon: 'IN', gurugram: 'IN', sydney: 'AU',
   melbourne: 'AU', toronto: 'CA', vancouver: 'CA', montreal: 'CA', ottawa: 'CA', waterloo: 'CA',
   calgary: 'CA', 'sao paulo': 'BR', 'são paulo': 'BR', 'mexico city': 'MX', dubai: 'AE',
-  'abu dhabi': 'AE', riyadh: 'SA', 'hong kong': 'HK', taipei: 'TW', shanghai: 'CN', beijing: 'CN',
-  jakarta: 'ID', 'kuala lumpur': 'MY', manila: 'PH', bangkok: 'TH', nairobi: 'KE', lagos: 'NG',
-  'cape town': 'ZA', johannesburg: 'ZA',
+  'abu dhabi': 'AE', doha: 'QA', riyadh: 'SA', 'hong kong': 'HK', taipei: 'TW', shanghai: 'CN',
+  beijing: 'CN', jakarta: 'ID', 'kuala lumpur': 'MY', manila: 'PH', bangkok: 'TH', nairobi: 'KE',
+  lagos: 'NG', 'cape town': 'ZA', johannesburg: 'ZA',
+};
+
+// Short names / area names -> the city we report.
+const ALIASES: Record<string, string> = {
+  sf: 'San Francisco',
+  'sf bay area': 'San Francisco',
+  'san francisco bay area': 'San Francisco',
+  'bay area': 'San Francisco',
+  nyc: 'New York City',
 };
 
 const stateByName = new Map<string, string>(
@@ -87,19 +112,96 @@ const provinceByName = new Map<string, string>(
   Object.entries(CA_PROVINCES).map(([abbr, name]) => [name.toLowerCase(), abbr])
 );
 
+// Splits one location field into separate places: ; | • · / "or" "and" "&"
+const SPLIT_RE = /[;|•·\/]|\s+or\s+|\s+and\s+|\s+&\s+/i;
+
+function isKnownCity(s: string): boolean {
+  const k = s.toLowerCase();
+  return !!(US_CITIES[k] || WORLD_CITIES[k] || ALIASES[k]);
+}
+
+// Removes the noise around a place name: (HQ), Hybrid, Office, Remote, U.S. -> US, D.C. -> DC ...
+function tidy(s: string): string {
+  return String(s ?? '')
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\bU\.S\.A\.?/gi, 'USA')
+    .replace(/\bU\.S\.?/gi, 'US')
+    .replace(/\bD\.C\.?/gi, 'DC')
+    .replace(/\bremote[\s-]*friendly\b/gi, ' ')
+    .replace(/\bremote\b/gi, ' ')
+    .replace(/\b(hybrid|on-?site|in-?office|office|travel[\s-]*required)\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s,\-–—:]+|[\s,\-–—:]+$/g, '')
+    .trim();
+}
+
+// "Hybrid - San Francisco, New York City, Austin" -> three places. Left alone when it is
+// "City, State" or anything we don't recognise.
+function expandCities(token: string): string[] {
+  const parts = token.split(',').map((p) => p.trim()).filter(Boolean);
+  if (parts.length < 2) return [token];
+  const hasStateOrProvince = parts.some((p) => {
+    const lower = p.toLowerCase();
+    const upper = p.toUpperCase();
+    return stateByName.has(lower) || provinceByName.has(lower) || !!US_STATES[upper] || !!CA_PROVINCES[upper];
+  });
+  if (hasStateOrProvince) return [token];
+  return parts.every(isKnownCity) ? parts : [token];
+}
+
+// One location field -> a clean list of single places. "Remote" parts are dropped.
+export function splitPlaces(text: string): string[] {
+  const out: string[] = [];
+  for (const raw of String(text ?? '').split(SPLIT_RE)) {
+    const t = tidy(raw);
+    if (!t) continue;
+    out.push(...expandCities(t));
+  }
+  return out;
+}
+
 // "Mountain View, California (HQ)"  ->  { locality: 'Mountain View', region: 'CA', country: 'US' }
 export function parsePlace(text: string): Parsed {
-  const cleaned = String(text ?? '').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+  const cleaned = tidy(String(text ?? ''));
   if (!cleaned) return {};
 
   const parts = cleaned.split(',').map((p) => p.trim()).filter(Boolean);
   let country: string | undefined;
   let region: string | undefined;
+  let cityFromCountryToken: string | undefined;
 
-  const last = parts[parts.length - 1]?.toLowerCase();
-  if (last && COUNTRIES[last]) {
-    country = COUNTRIES[last];
-    parts.pop();
+  // "Sunnyvale, California USA": the country is stuck to the last part with no comma
+  if (parts.length) {
+    const lastRaw = parts[parts.length - 1];
+    const glued = lastRaw.match(/^(.+?)\s+(USA|US)$/i);
+    if (glued && !COUNTRIES[lastRaw.toLowerCase()]) {
+      parts[parts.length - 1] = glued[1].trim();
+      country = 'US';
+    }
+  }
+
+  // "Northeast - United States": keep the country, drop an area name we don't know
+  if (!country && parts.length) {
+    const segs = parts[parts.length - 1].split(/\s+[-–—]\s+/);
+    if (segs.length > 1) {
+      const c = COUNTRIES[segs[segs.length - 1].toLowerCase()];
+      if (c) {
+        country = c;
+        const prefix = segs.slice(0, -1).join(' - ');
+        if (isKnownCity(prefix)) parts[parts.length - 1] = prefix;
+        else parts.pop();
+      }
+    }
+  }
+
+  if (!country) {
+    const last = parts[parts.length - 1]?.toLowerCase();
+    if (last && COUNTRIES[last]) {
+      country = COUNTRIES[last];
+      // city-states like "Singapore" / "Hong Kong" are also the locality
+      if (parts.length === 1 && WORLD_CITIES[last]) cityFromCountryToken = parts[0];
+      parts.pop();
+    }
   }
 
   if (parts.length) {
@@ -112,7 +214,8 @@ export function parsePlace(text: string): Parsed {
       region = upper; country = 'US'; parts.pop();
     } else if (hasCity && CA_PROVINCES[upper] && (!country || country === 'CA')) {
       region = upper; country = 'CA'; parts.pop();
-    } else if (stateByName.has(lower) && (!country || country === 'US')) {
+    } else if (stateByName.has(lower) && (!country || country === 'US') && !(parts.length === 1 && isKnownCity(tail))) {
+      // (a lone "New York" is the city, not the state)
       region = stateByName.get(lower); country = 'US'; parts.pop();
     } else if (provinceByName.has(lower) && (!country || country === 'CA')) {
       region = provinceByName.get(lower); country = 'CA'; parts.pop();
@@ -123,7 +226,13 @@ export function parsePlace(text: string): Parsed {
     }
   }
 
-  let locality = parts.join(', ') || undefined;
+  let locality = parts.join(', ') || cityFromCountryToken || undefined;
+
+  // Short names: "SF", "NYC", "San Francisco Bay Area" -> the real city
+  if (locality) {
+    const alias = ALIASES[locality.toLowerCase()];
+    if (alias) locality = alias;
+  }
 
   // City alone, no country written: use the well-known list
   if (!country && locality) {
@@ -141,18 +250,30 @@ export function parsePlace(text: string): Parsed {
   return { locality, region, country };
 }
 
-type Place = {
+export type Place = {
   '@type': 'Place';
   address: { '@type': 'PostalAddress'; addressLocality?: string; addressRegion?: string; addressCountry?: string };
 };
 
-// For a job done in an office: a list of Places (only ones we could read).
+// For a job done in an office. Pass the raw location text(s); each may hold several places
+// ("San Francisco | New York", "NYC / Sunnyvale"). Returns only the places we could read.
 export function officePlaces(placeTexts: string[]): Place[] {
+  const parsed: Parsed[] = [];
+  for (const text of placeTexts) {
+    for (const piece of splitPlaces(text)) {
+      const p = parsePlace(piece);
+      if (!p.locality && !p.country) continue;
+      parsed.push(p);
+    }
+  }
+
+  // A bare "United States" next to real US cities adds nothing, so skip it.
+  const countriesWithDetail = new Set(parsed.filter((p) => p.locality || p.region).map((p) => p.country));
+
   const seen = new Set<string>();
   const places: Place[] = [];
-  for (const text of placeTexts) {
-    const p = parsePlace(text);
-    if (!p.locality && !p.country) continue;
+  for (const p of parsed) {
+    if (!p.locality && !p.region && p.country && countriesWithDetail.has(p.country)) continue;
     const key = `${p.locality}|${p.region}|${p.country}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -170,14 +291,20 @@ export function officePlaces(placeTexts: string[]): Place[] {
   return places;
 }
 
-type Target = { '@type': 'Country' | 'State'; name: string };
+export type Target = { '@type': 'Country' | 'State'; name: string };
+
+// True for "Ontario, Canada", "California", "US", "Japan": a country or state with no city.
+function isRegionOnly(s: string): boolean {
+  const p = parsePlace(s);
+  return !!p.country && !p.locality;
+}
 
 // For a fully remote job: the Country / State objects Google accepts. Anything we can't tie to
 // a real country ("EMEA", "Worldwide", "Europe") produces no target, so the markup is left out.
 export function remoteTargets(regionText: string): Target[] {
   const tokens = String(regionText ?? '')
-    .split(/[|;/]|\s+or\s+|\s+and\s+/i)
-    .map((t) => t.trim())
+    .split(/[|;•\/]|\s+or\s+|\s+and\s+/i)
+    .map((t) => tidy(t))
     .filter(Boolean);
 
   const out: Target[] = [];
@@ -190,7 +317,17 @@ export function remoteTargets(regionText: string): Target[] {
     }
   };
 
-  for (const token of tokens) {
+  // "US, UK" is two countries; "Ontario, Canada" is one province; "San Francisco, CA" is one city.
+  const candidates: string[] = [];
+  for (const t of tokens) {
+    const whole = parsePlace(t);
+    const pieces = t.split(',').map((s) => s.trim()).filter(Boolean);
+    const isStateInCountry = !!whole.region && !whole.locality;
+    if (pieces.length > 1 && !isStateInCountry && pieces.every(isRegionOnly)) candidates.push(...pieces);
+    else candidates.push(t);
+  }
+
+  for (const token of candidates) {
     const p = parsePlace(token);
     if (!p.country) continue;
     if (p.region && !p.locality) {
@@ -202,6 +339,16 @@ export function remoteTargets(regionText: string): Target[] {
     }
   }
   return out.slice(0, 10);
+}
+
+// True only when every place we found is in the United States. Used to decide whether it is
+// safe to label a salary as USD (the jobs table has no currency column).
+export function allInUS(places: Place[], targets: Target[]): boolean {
+  const countries = [
+    ...places.map((p) => p.address.addressCountry),
+    ...targets.map((t) => (t['@type'] === 'Country' ? (t.name === 'USA' ? 'US' : t.name) : /, USA$/.test(t.name) ? 'US' : t.name)),
+  ];
+  return countries.length > 0 && countries.every((c) => c === 'US');
 }
 
 // Picks the employment type from the title/description. Falls back to FULL_TIME when nothing says otherwise.

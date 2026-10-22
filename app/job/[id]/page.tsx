@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cleanDescription } from '../../lib/cleanDescription';
-import { officePlaces, remoteTargets, inferEmploymentType } from '../../lib/jobSchema';
+import { officePlaces, remoteTargets, inferEmploymentType, allInUS } from '../../lib/jobSchema';
 import { getCompanyMeta } from '../../lib/companiesData';
 
 export const revalidate = 3600;
@@ -133,16 +133,10 @@ export default async function JobPage({
   const siblings =
     (job.group_size ?? 1) > 1 && job.group_key ? await getSiblings(job.group_key, job.company) : [];
 
-  const splitPlaces = (text: string) =>
-    String(text ?? '')
-      .split(/[;|]/)
-      .map((l) => l.trim())
-      .filter((l) => l && !/^remote/i.test(l));
-
+  // Raw location text goes straight to officePlaces, which splits and cleans it
+  // (handles | ; / • "or" "and", Hybrid/Office/Remote words, SF/NYC, 3-letter countries...).
   const placeTexts =
-    siblings.length > 1
-      ? siblings.flatMap((sib) => splitPlaces(sib.location ?? ''))
-      : splitPlaces(rawLocation);
+    siblings.length > 1 ? siblings.map((sib) => sib.location ?? '') : [rawLocation];
 
   // Google only accepts Country or State objects for remote jobs, and a readable address for office jobs.
   // If we can't work out a valid place, the JobPosting markup is left out instead of sending something invalid.
@@ -190,7 +184,8 @@ export default async function JobPage({
       }
     : null;
 
-  if (jsonLd && hasSalary) {
+  // The jobs table has no currency column, so only label pay as USD when every place is in the US.
+  if (jsonLd && hasSalary && allInUS(places, targets)) {
     jsonLd.baseSalary = {
       '@type': 'MonetaryAmount',
       currency: 'USD',
