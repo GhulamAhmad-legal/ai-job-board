@@ -5,6 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cleanDescription } from '../../lib/cleanDescription';
+import { officePlaces, remoteTargets, inferEmploymentType } from '../../lib/jobSchema';
+import { getCompanyMeta } from '../../lib/companiesData';
 
 export const revalidate = 3600;
 
@@ -14,23 +16,6 @@ const supabase = createClient(
 );
 
 const baseUrl = getSiteUrl();
-
-// Maps "United States" / "California" / "Ontario, Canada" to a schema.org requirement.
-function remoteRequirement(region: string) {
-  const countries: Record<string, string> = {
-    'united states': 'US',
-    us: 'US',
-    usa: 'US',
-    'united kingdom': 'GB',
-    uk: 'GB',
-    india: 'IN',
-    canada: 'CA',
-  };
-  const code = countries[region.toLowerCase()];
-  return code
-    ? { '@type': 'Country', name: code }
-    : { '@type': 'AdministrativeArea', name: region };
-}
 
 // One query shared by generateMetadata and the page. Inactive jobs 404.
 const getJob = cache(async (id: string) => {
@@ -154,41 +139,48 @@ export default async function JobPage({
       .map((l) => l.trim())
       .filter((l) => l && !/^remote/i.test(l));
 
-  const locations = isFullyRemote
-    ? []
-    : siblings.length > 1
-      ? Array.from(new Set(siblings.flatMap((sib) => splitPlaces(sib.location ?? '')))).slice(0, 25)
+  const placeTexts =
+    siblings.length > 1
+      ? siblings.flatMap((sib) => splitPlaces(sib.location ?? ''))
       : splitPlaces(rawLocation);
 
-  const jsonLd: Record<string, unknown> = {
-    '@context': 'https://schema.org/',
-    '@type': 'JobPosting',
-    title: job.title,
-    description: cleanDescription(job.description ?? ''),
-    datePosted: job.created_at,
-    directApply: false,
-    hiringOrganization: {
-      '@type': 'Organization',
-      name: job.company,
-      ...(job.company_logo_url ? { logo: job.company_logo_url } : {}),
-    },
-    ...(locations.length
-      ? {
-          jobLocation: locations.map((l) => ({
-            '@type': 'Place',
-            address: { '@type': 'PostalAddress', addressLocality: l },
-          })),
-        }
-      : {}),
-    ...(isFullyRemote
-      ? {
-          jobLocationType: 'TELECOMMUTE',
-          applicantLocationRequirements: remoteRequirement(remoteRegion),
-        }
-      : {}),
-  };
+  // Google only accepts Country or State objects for remote jobs, and a readable address for office jobs.
+  // If we can't work out a valid place, the JobPosting markup is left out instead of sending something invalid.
+  const targets = isFullyRemote ? remoteTargets(remoteRegion) : [];
+  const places = isFullyRemote ? [] : officePlaces(placeTexts);
+  const hasValidLocation = isFullyRemote ? targets.length > 0 : places.length > 0;
 
-  if (hasSalary) {
+  const employmentType = inferEmploymentType(job.title, job.description ?? '');
+  const companyDomain = getCompanyMeta(job.company).domain;
+
+  // Google also requires a way to apply, so listings without an apply link get no JobPosting markup.
+  const jsonLd: Record<string, unknown> | null = hasValidLocation && job.apply_url
+    ? {
+        '@context': 'https://schema.org/',
+        '@type': 'JobPosting',
+        title: job.title,
+        description: cleanDescription(job.description ?? ''),
+        datePosted: job.created_at,
+        directApply: false,
+        identifier: { '@type': 'PropertyValue', name: job.company, value: String(job.id) },
+        ...(employmentType ? { employmentType } : {}),
+        hiringOrganization: {
+          '@type': 'Organization',
+          name: job.company,
+          ...(companyDomain ? { sameAs: `https://${companyDomain}` } : {}),
+          ...(job.company_logo_url ? { logo: job.company_logo_url } : {}),
+        },
+        ...(places.length ? { jobLocation: places.length === 1 ? places[0] : places } : {}),
+        ...(isFullyRemote
+          ? {
+              jobLocationType: 'TELECOMMUTE',
+              applicantLocationRequirements: targets.length === 1 ? targets[0] : targets,
+            }
+          : {}),
+      }
+    : null;
+
+  if (jsonLd && hasSalary) {
     jsonLd.baseSalary = {
       '@type': 'MonetaryAmount',
       currency: 'USD',
@@ -203,12 +195,14 @@ export default async function JobPage({
 
   return (
     <main className="min-h-screen bg-[#F5F6F8] font-sans pb-20">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
-        }}
-      />
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+          }}
+        />
+      )}
 
       <div className="max-w-[800px] mx-auto px-4 pt-6">
         <Link
