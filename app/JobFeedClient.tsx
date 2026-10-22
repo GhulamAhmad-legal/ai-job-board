@@ -70,6 +70,28 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
 
   const descriptionScrollRef = useRef<HTMLDivElement>(null);
 
+  // Descriptions are not sent with the list. The panel loads the open job's description once
+  // and remembers it, so going back to a job you already viewed is instant.
+  const [descCache, setDescCache] = useState<Record<string, string>>({});
+  const activeId: string | undefined = activeJob?.id;
+
+  useEffect(() => {
+    if (!activeId || activeJob?.description || descCache[activeId] !== undefined) return;
+    let cancelled = false;
+    fetch(`/api/job-description?id=${encodeURIComponent(activeId)}`)
+      .then((res) => (res.ok ? res.json() : { description: '' }))
+      .then((data) => {
+        if (!cancelled) setDescCache((c) => ({ ...c, [activeId]: data.description ?? '' }));
+      })
+      .catch(() => {
+        if (!cancelled) setDescCache((c) => ({ ...c, [activeId]: '' }));
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId]);
+
   const handleJobClick = (job: any) => {
     setActiveJob(job);
     if (descriptionScrollRef.current) {
@@ -365,7 +387,28 @@ export default function JobFeedClient({ initialJobs, totalCount }: Props) {
                    </a>
                  )}
                </div>
-               <div className="p-8 pb-16 prose max-w-none" dangerouslySetInnerHTML={{ __html: activeJob.description ?? '' }} />
+               <div className="p-8 pb-16 prose max-w-none">
+                 {(() => {
+                   const html = activeJob.description || descCache[activeJob.id];
+                   if (html) return <div dangerouslySetInnerHTML={{ __html: html }} />;
+                   if (html === undefined) {
+                     return (
+                       <div className="animate-pulse space-y-3" aria-label="Loading description">
+                         <div className="h-4 bg-gray-200 rounded w-3/4" />
+                         <div className="h-4 bg-gray-200 rounded w-full" />
+                         <div className="h-4 bg-gray-200 rounded w-5/6" />
+                         <div className="h-4 bg-gray-200 rounded w-2/3" />
+                       </div>
+                     );
+                   }
+                   return (
+                     <p>
+                       The description could not be loaded.{' '}
+                       <Link href={jobPath(activeJob)} className="text-indigo-600 font-bold">Open the full job page</Link>
+                     </p>
+                   );
+                 })()}
+               </div>
               </div>
             )}
           </div>

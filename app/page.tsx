@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import JobFeedClient from './JobFeedClient';
-import { cleanDescription } from './lib/cleanDescription';
 
 export const revalidate = 3600;
 
@@ -12,6 +11,11 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+// Everything the job list and the preview panel need, except the description.
+// Descriptions load one at a time from /api/job-description when a job is opened.
+const FEED_COLUMNS =
+  'id, seq, title, company, location, salary_min, salary_max, company_logo_url, apply_url, created_at, tags, group_size';
 
 const FEED_SIZE = 150; // jobs sent to the page
 const POOL_SIZE = 1000; // newest jobs considered (light columns only)
@@ -90,14 +94,11 @@ export default async function Home() {
   // 3. Fetch full rows only for the jobs we'll actually show.
   const ids = picked.map((p) => p.id);
   const { data: rows } = ids.length
-    ? await supabase.from('jobs').select('*').in('id', ids)
+    ? await supabase.from('jobs').select(FEED_COLUMNS).in('id', ids)
     : { data: [] };
 
   const byId = new Map((rows ?? []).map((r) => [r.id, r]));
-  const jobs = ids
-    .map((id) => byId.get(id))
-    .filter(Boolean)
-    .map((j) => ({ ...j, description: cleanDescription(j.description ?? '') }));
+  const jobs = ids.map((id) => byId.get(id)).filter(Boolean);
 
   return <JobFeedClient initialJobs={jobs} totalCount={count || 0} />;
 }
