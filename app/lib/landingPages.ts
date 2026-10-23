@@ -81,3 +81,36 @@ export function joinList(items: string[]): string {
   if (items.length <= 1) return items.join('');
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
+
+// ---------- Which landing pages does one job belong to? (used for links on the job page) ----------
+
+export type JobLike = { title: string; location?: string | null; tags?: unknown };
+
+// The same rule the landing page uses when it queries the database, applied to a single job.
+export function jobMatchesLanding(lp: LandingPage, job: JobLike): boolean {
+  const tags = Array.isArray(job.tags) ? (job.tags as unknown[]).map(String) : [];
+  const needed = [...(lp.kind === 'remote' || lp.remote ? ['Remote'] : []), ...(lp.tags ?? [])];
+  if (!needed.every((t) => tags.includes(t))) return false;
+  if (lp.kind === 'location' || lp.kind === 'role') {
+    const text = (lp.kind === 'location' ? job.location ?? '' : job.title ?? '').toLowerCase();
+    return lp.match.some((m) => text.includes(m.toLowerCase()));
+  }
+  return true; // 'remote' and 'topic' pages are decided by tags alone
+}
+
+// Landing pages this job belongs to, limited to the ones that currently have enough openings
+// (`liveSlugs`), roles first, then places, then remote/topic. At most 5.
+export function jobHubs(job: JobLike, liveSlugs: Set<string>): LandingPage[] {
+  const order: Record<LandingKind, number> = { role: 0, location: 1, remote: 2, topic: 3 };
+  return landingPages
+    .filter((lp) => liveSlugs.has(lp.slug) && jobMatchesLanding(lp, job))
+    .sort((a, b) => order[a.kind] - order[b.kind])
+    .slice(0, 5);
+}
+
+// Link text for a landing page
+export function landingLinkLabel(lp: LandingPage): string {
+  if (lp.kind === 'remote') return 'Remote jobs';
+  if (lp.kind === 'location') return `Jobs in ${lp.name}`;
+  return `${lp.name} jobs`;
+}

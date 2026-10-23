@@ -147,3 +147,19 @@ export function getLandingCounts(): Promise<{ slug: string; count: number }[]> {
   });
   return promise;
 }
+
+// Total open roles on the site (shown on the /jobs page). Remembered for 10 minutes.
+let totalMemo: { at: number; promise: Promise<number> } | null = null;
+
+export function getActiveJobCount(): Promise<number> {
+  if (totalMemo && Date.now() - totalMemo.at < 10 * 60 * 1000) return totalMemo.promise;
+  const promise = (async () => {
+    const { count } = await base('id', { count: 'exact', head: true });
+    return (count as number | null) ?? 0;
+  })();
+  totalMemo = { at: Date.now(), promise };
+  promise.catch(() => {
+    totalMemo = null;
+  });
+  return promise;
+}

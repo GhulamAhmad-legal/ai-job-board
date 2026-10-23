@@ -8,6 +8,10 @@ import { cleanDescription } from '../../lib/cleanDescription';
 import { officePlaces, remoteTargets, inferEmploymentType, allInUS } from '../../lib/jobSchema';
 import { getCompanyMeta } from '../../lib/companiesData';
 import { jobPath, parseJobRef } from '../../lib/jobSlug';
+import BackLink from '../../components/BackLink';
+import { getLandingCounts } from '../../lib/landingData';
+import { MIN_JOBS, jobHubs, landingLinkLabel } from '../../lib/landingPages';
+import { getMoreFromCompany, getSimilarJobs, type RelatedJob } from '../../lib/relatedJobs';
 
 export const revalidate = 3600;
 
@@ -100,6 +104,47 @@ export async function generateMetadata({
     ...(duplicate ? { robots: { index: false, follow: true } } : {}),
     openGraph: { title, description, url, type: 'website', siteName: siteConfig.name },
   };
+}
+
+// A compact list of related roles (used for "More jobs at ..." and "Similar roles").
+function RelatedList({
+  heading,
+  jobs,
+  footer,
+}: {
+  heading: string;
+  jobs: RelatedJob[];
+  footer?: React.ReactNode;
+}) {
+  if (jobs.length === 0) return null;
+  return (
+    <section className="mt-6 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+        <h2 className="text-[16px] font-extrabold text-gray-900">{heading}</h2>
+      </div>
+      <div className="divide-y divide-gray-100">
+        {jobs.map((j) => {
+          const paid =
+            typeof j.salary_min === 'number' &&
+            typeof j.salary_max === 'number' &&
+            j.salary_min > 0 &&
+            j.salary_max >= j.salary_min;
+          const place = (j.location ?? '').split(';')[0];
+          return (
+            <Link key={j.id} href={jobPath(j)} className="block px-6 py-4 hover:bg-blue-50/40 transition-colors">
+              <div className="text-[16px] font-bold text-gray-900">{j.title}</div>
+              <div className="text-[14px] text-gray-500 mt-0.5">
+                {j.company}
+                {place ? ` · ${place}` : ''}
+                {paid ? ` · $${j.salary_min}K – $${j.salary_max}K` : ''}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+      {footer && <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/50 text-[14px]">{footer}</div>}
+    </section>
+  );
 }
 
 export default async function JobPage({
@@ -206,8 +251,35 @@ export default async function JobPage({
     };
   }
 
+  // ---- Related links: the search pages this job belongs to, more jobs at the company, similar roles ----
+  const liveSlugs = new Set(
+    (await getLandingCounts()).filter((c) => c.count >= MIN_JOBS).map((c) => c.slug)
+  );
+  const hubs = jobHubs(job, liveSlugs);
+  const [moreFromCompany, similarJobs] = await Promise.all([getMoreFromCompany(job), getSimilarJobs(job)]);
+
+  // Breadcrumb: Home > Jobs > (role or place page) > this job
+  const crumbHub = hubs.find((h) => h.kind === 'role') ?? hubs.find((h) => h.kind === 'location') ?? hubs[0];
+  const crumbTitle = String(job.title).replace(/\s+/g, ' ').trim();
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${baseUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Jobs', item: `${baseUrl}/jobs` },
+      ...(crumbHub
+        ? [{ '@type': 'ListItem', position: 3, name: landingLinkLabel(crumbHub), item: `${baseUrl}/jobs/${crumbHub.slug}` }]
+        : []),
+      { '@type': 'ListItem', position: crumbHub ? 4 : 3, name: crumbTitle, item: `${baseUrl}${canonicalPath}` },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-[#F5F6F8] font-sans pb-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, '\\u003c') }}
+      />
       {jsonLd && (
         <script
           type="application/ld+json"
@@ -218,15 +290,33 @@ export default async function JobPage({
       )}
 
       <div className="max-w-[800px] mx-auto px-4 pt-6">
-        <Link
-          href="/"
+        {/* Goes back to the page the visitor came from (company page, landing page, home);
+            falls back to the home page when they arrived from elsewhere. */}
+        <BackLink
+          fallbackHref="/"
           className="inline-flex items-center text-gray-500 hover:text-blue-600 transition-colors font-bold text-[14px]"
         >
           <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
           Back to all jobs
-        </Link>
+        </BackLink>
+
+        <nav aria-label="Breadcrumb" className="mt-3 flex flex-wrap items-center gap-x-1.5 text-[13px] text-gray-500">
+          <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
+          <span aria-hidden="true">›</span>
+          <Link href="/jobs" className="hover:text-blue-600 transition-colors">Jobs</Link>
+          {crumbHub && (
+            <>
+              <span aria-hidden="true">›</span>
+              <Link href={`/jobs/${crumbHub.slug}`} className="hover:text-blue-600 transition-colors">
+                {landingLinkLabel(crumbHub)}
+              </Link>
+            </>
+          )}
+          <span aria-hidden="true">›</span>
+          <span className="text-gray-700 font-medium">{crumbTitle}</span>
+        </nav>
       </div>
 
       <div className="max-w-[800px] mx-auto px-4 mt-8">
@@ -311,6 +401,47 @@ export default async function JobPage({
             />
           </div>
         </div>
+
+        {/* ---------- Explore more ---------- */}
+        <section className="mt-6 bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <h2 className="text-[16px] font-extrabold text-gray-900 mb-4">Explore more</h2>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/companies/${encodeURIComponent(job.company)}`}
+              className="text-[13px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg border border-indigo-100 transition-colors"
+            >
+              All {job.company} jobs →
+            </Link>
+            {hubs.map((h) => (
+              <Link
+                key={h.slug}
+                href={`/jobs/${h.slug}`}
+                className="text-[13px] font-bold text-gray-700 bg-gray-50 hover:bg-blue-50 hover:text-blue-700 px-3 py-1.5 rounded-lg border border-gray-200 transition-colors"
+              >
+                {landingLinkLabel(h)}
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* ---------- More at this company ---------- */}
+        <RelatedList
+          heading={`More jobs at ${job.company}`}
+          jobs={moreFromCompany.jobs}
+          footer={
+            moreFromCompany.total > moreFromCompany.jobs.length + 1 ? (
+              <Link
+                href={`/companies/${encodeURIComponent(job.company)}`}
+                className="font-bold text-blue-600 hover:text-blue-700"
+              >
+                See all {moreFromCompany.total.toLocaleString()} jobs at {job.company} →
+              </Link>
+            ) : undefined
+          }
+        />
+
+        {/* ---------- Similar roles elsewhere ---------- */}
+        <RelatedList heading="Similar roles at other companies" jobs={similarJobs} />
       </div>
     </main>
   );
