@@ -5,11 +5,12 @@ import { usePathname } from 'next/navigation';
 import { siteConfig } from '../lib/siteConfig';
 
 const links = [
-  { href: '/', label: 'Find Jobs', isActive: (p: string) => p === '/' },
-  { href: '/jobs', label: 'Browse', isActive: (p: string) => p.startsWith('/jobs') },
+  //{ href: '/', label: 'Find Jobs', isActive: (p: string) => p === '/' },
+  { href: '/jobs', label: 'Find Jobs', isActive: (p: string) => p.startsWith('/jobs') },
   { href: '/companies', label: 'Companies', isActive: (p: string) => p.startsWith('/companies') },
   { href: '/blog', label: 'Blog', isActive: (p: string) => p.startsWith('/blog') },
   { href: '/about', label: 'About', isActive: (p: string) => p === '/about' },
+  { href: '/contact', label: 'Contact', isActive: (p: string) => p === '/contact' },
 ];
 
 export default function Header() {

@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 font-medium">
         {/* Popular searches: crawlable links to the biggest landing pages */}
         <div className="mb-6 flex flex-wrap justify-center gap-x-6 gap-y-2">
-          <Link href="/jobs" className="font-bold text-gray-700 hover:text-gray-900 transition">Browse Jobs</Link>
+          <Link href="/jobs" className="font-bold text-gray-700 hover:text-gray-900 transition">Find Jobs</Link>
           <Link href="/jobs/remote" className="hover:text-gray-900 transition">Remote Jobs</Link>
           <Link href="/jobs/san-francisco" className="hover:text-gray-900 transition">Jobs in San Francisco</Link>
           <Link href="/jobs/new-york" className="hover:text-gray-900 transition">Jobs in New York</Link>
