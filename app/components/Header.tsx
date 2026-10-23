@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { siteConfig } from '../lib/siteConfig';
 
+// The logo already links to the home page, so there is no separate "home" item here.
 const links = [
-  { href: '/', label: 'Find Jobs', isActive: (p: string) => p === '/' },
-  { href: '/jobs', label: 'Browse', isActive: (p: string) => p.startsWith('/jobs') },
+  { href: '/jobs', label: 'Find Jobs', isActive: (p: string) => p.startsWith('/jobs') },
   { href: '/companies', label: 'Companies', isActive: (p: string) => p.startsWith('/companies') },
   { href: '/blog', label: 'Blog', isActive: (p: string) => p.startsWith('/blog') },
   { href: '/about', label: 'About', isActive: (p: string) => p === '/about' },
+  { href: '/contact', label: 'Contact', isActive: (p: string) => p === '/contact' },
 ];
 
 export default function Header() {
@@ -45,10 +46,7 @@ export default function Header() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-6">
-            <Link href="/contact" className="text-[14px] font-bold text-gray-500 hover:text-blue-600 transition-colors duration-200">
-              Contact
-            </Link>
+          <div className="flex items-center">
             {/* Not live yet: shown as a disabled label, not a link */}
             <span
               aria-disabled="true"
