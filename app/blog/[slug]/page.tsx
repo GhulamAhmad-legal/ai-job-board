@@ -7,6 +7,7 @@ import { getPostHtml } from '../../lib/blog';
 import { getJobsForWidget } from '../../lib/blogJobs';
 import { siteConfig } from '../../lib/siteConfig';
 import { getSiteUrl } from '../../lib/siteUrl';
+import { jobPath } from '../../lib/jobSlug';
 
 // Published articles are built ahead of time; scheduled ones appear on their date (checked hourly).
 export const revalidate = 3600;
@@ -50,7 +51,9 @@ export async function generateMetadata({
       publishedTime: meta.date,
       modifiedTime: meta.updated ?? meta.date,
       authors: [AUTHOR.name],
+      images: [{ url: '/og-default.png', width: 1200, height: 630 }],
     },
+    twitter: { card: 'summary_large_image', images: ['/og-default.png'] },
   };
 }
 
@@ -89,6 +92,7 @@ export default async function BlogPostPage({
     datePublished: meta.date,
     dateModified: meta.updated ?? meta.date,
     mainEntityOfPage: `${baseUrl}/blog/${meta.slug}`,
+    image: [`${baseUrl}/og-default.png`],
     author: { '@type': 'Person', name: AUTHOR.name, jobTitle: AUTHOR.role },
     publisher: { '@type': 'Organization', name: siteConfig.name },
   };
@@ -141,7 +145,7 @@ export default async function BlogPostPage({
                 return (
                   <Link
                     key={job.id}
-                    href={`/job/${job.id}`}
+                    href={jobPath(job)}
                     className="block px-6 py-4 hover:bg-blue-50/40 transition-colors"
                   >
                     <div className="text-[16px] font-bold text-gray-900">{job.title}</div>

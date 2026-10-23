@@ -8,6 +8,7 @@ const supabase = createClient(
 
 export type JobCard = {
   id: string;
+  seq: number | null;
   title: string;
   company: string;
   location: string | null;
@@ -24,7 +25,7 @@ export async function getJobsForWidget(w: JobWidget, limit = 6): Promise<JobCard
   try {
     let q = supabase
       .from('jobs')
-      .select('id, title, company, location, salary_min, salary_max')
+      .select('id, seq, title, company, location, salary_min, salary_max')
       .eq('status', 'active')
       .eq('is_primary', true);
 

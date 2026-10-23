@@ -15,13 +15,15 @@ export const metadata: Metadata = {
   description:
     "Browse AI, machine learning and engineering jobs at leading tech companies. Search by role or location and filter for remote positions.",
   openGraph: {
+    url: '/',
+    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: `${siteConfig.name}: AI, machine learning and tech jobs` }],
     title: `Tech, AI & Machine Learning Jobs | ${siteConfig.name}`,
     description:
       "Browse AI, machine learning and engineering jobs at leading tech companies. Search by role or location and filter for remote positions.",
     siteName: siteConfig.name,
     type: 'website',
   },
-  twitter: { card: 'summary' },
+  twitter: { card: 'summary_large_image', images: ['/og-default.png'] },
 };
 
 export default function RootLayout({

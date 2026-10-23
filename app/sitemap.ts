@@ -26,18 +26,30 @@ async function fetchAllActiveJobs(): Promise<JobRow[]> {
   const all: JobRow[] = [];
 
   for (let from = 0; ; from += pageSize) {
-    const { data, error } = await supabase
-      .from('jobs')
-      .select('id, seq, title, company, created_at')
-      .eq('status', 'active')
-      .eq('is_primary', true)
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: true }) // stable order for pagination
-      .range(from, from + pageSize - 1);
+    // Try each page up to 3 times. If it still fails, stop with an error rather than publishing a
+    // sitemap that is silently missing jobs (Next keeps the last good sitemap when a refresh fails).
+    let rows: JobRow[] | null = null;
+    let lastError = '';
+    for (let attempt = 0; attempt < 3 && !rows; attempt++) {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('id, seq, title, company, created_at')
+        .eq('status', 'active')
+        .eq('is_primary', true)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true }) // stable order for pagination
+        .range(from, from + pageSize - 1);
 
-    if (error || !data) break;
-    all.push(...(data as JobRow[]));
-    if (data.length < pageSize) break;
+      if (!error && data) rows = data as JobRow[];
+      else {
+        lastError = error?.message ?? 'no data returned';
+        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+      }
+    }
+    if (!rows) throw new Error(`sitemap: could not read jobs (${lastError})`);
+
+    all.push(...rows);
+    if (rows.length < pageSize) break;
   }
 
   return all;
@@ -76,7 +88,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPaths = [
     ...(landingCounts.length ? ['/jobs'] : []),
     '/companies',
-    '/post-job',
     '/about',
     '/contact',
     '/privacy',

@@ -5,12 +5,11 @@ import { usePathname } from 'next/navigation';
 import { siteConfig } from '../lib/siteConfig';
 
 const links = [
-  //{ href: '/', label: 'Find Jobs', isActive: (p: string) => p === '/' },
-  { href: '/jobs', label: 'Find Jobs', isActive: (p: string) => p.startsWith('/jobs') },
+  { href: '/', label: 'Find Jobs', isActive: (p: string) => p === '/' },
+  { href: '/jobs', label: 'Browse', isActive: (p: string) => p.startsWith('/jobs') },
   { href: '/companies', label: 'Companies', isActive: (p: string) => p.startsWith('/companies') },
   { href: '/blog', label: 'Blog', isActive: (p: string) => p.startsWith('/blog') },
   { href: '/about', label: 'About', isActive: (p: string) => p === '/about' },
-  { href: '/contact', label: 'Contact', isActive: (p: string) => p === '/contact' },
 ];
 
 export default function Header() {
@@ -47,12 +46,18 @@ export default function Header() {
           </div>
 
           <div className="flex items-center space-x-6">
-           {/* <Link href="/contact" className="text-[14px] font-bold text-gray-500 hover:text-blue-600 transition-colors duration-200">
+            <Link href="/contact" className="text-[14px] font-bold text-gray-500 hover:text-blue-600 transition-colors duration-200">
               Contact
-            </Link>*/}
-            <Link href="/post-job" className="bg-[#00060C] text-white px-5 py-2.5 rounded-lg text-[14px] font-bold hover:bg-blue-600 hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5">
-              Post a Job — $299
             </Link>
+            {/* Not live yet: shown as a disabled label, not a link */}
+            <span
+              aria-disabled="true"
+              title="Job posting is coming soon"
+              className="bg-gray-100 text-gray-500 border border-gray-200 px-4 sm:px-5 py-2.5 rounded-lg text-[14px] font-bold cursor-not-allowed select-none whitespace-nowrap"
+            >
+              <span className="sm:hidden">Post a Job: Soon</span>
+              <span className="hidden sm:inline">Post a Job — Coming soon</span>
+            </span>
           </div>
 
         </div>

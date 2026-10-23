@@ -1,7 +1,8 @@
 import { siteConfig } from '../../lib/siteConfig';
 import { createClient } from '@supabase/supabase-js';
+import { cache } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getCompanyMeta } from '../../lib/companiesData';
 import { jobPath } from '../../lib/jobSlug';
@@ -24,6 +25,12 @@ type JobRow = {
   company_logo_url: string | null;
   group_size: number | null;
 };
+
+const SHOW_JOBS = 100; // newest roles listed on the page (the total is still shown)
+
+// Cuts text at a whole word and adds an ellipsis.
+const clip = (s: string, n: number) =>
+  s.length <= n ? s : `${s.slice(0, Math.max(s.lastIndexOf(' ', n - 1), 0) || n - 1)}…`;
 
 // Safely read the curated profile (industry, description, domain) for a company.
 function readMeta(name: string) {
@@ -66,6 +73,9 @@ async function fetchCompanyJobs(name: string): Promise<JobRow[]> {
   return all;
 }
 
+// One query shared by generateMetadata and the page.
+const getCompanyJobs = cache((name: string) => fetchCompanyJobs(name));
+
 export async function generateMetadata({
   params,
 }: {
@@ -73,11 +83,19 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { name } = await params;
   const decodedName = decodeURIComponent(name);
-  const meta = readMeta(decodedName);
 
-  const title = `${decodedName} Careers and Open Roles | ${siteConfig.name}`;
-  const description = `${decodedName} open roles on ${siteConfig.name}. ${meta.description}`.slice(0, 158);
-  const path = `/companies/${encodeURIComponent(decodedName)}`;
+  const found = await getCompanyJobs(decodedName);
+  if (found.length === 0) {
+    return { title: `Company not found | ${siteConfig.name}`, robots: { index: false } };
+  }
+  // Always use the company's real spelling, so /companies/databricks and /companies/Databricks
+  // can never become two separate pages in search results.
+  const canonicalName = found[0].company;
+  const meta = readMeta(canonicalName);
+
+  const title = `${canonicalName} Careers and Open Roles | ${siteConfig.name}`;
+  const description = clip(`${canonicalName} open roles on ${siteConfig.name}. ${meta.description}`, 158);
+  const path = `/companies/${encodeURIComponent(canonicalName)}`;
 
   return {
     title,
@@ -95,10 +113,12 @@ export default async function CompanyPage({
   const { name } = await params;
   const decodedName = decodeURIComponent(name);
 
-  const jobs = await fetchCompanyJobs(decodedName);
+  const jobs = await getCompanyJobs(decodedName);
   if (jobs.length === 0) notFound();
 
   const companyName = jobs[0].company;
+  // Wrong capitalisation in the address? Send people (and Google) to the one real address.
+  if (companyName !== decodedName) permanentRedirect(`/companies/${encodeURIComponent(companyName)}`);
   const meta = readMeta(companyName);
   const hasRealDomain = !!meta.domain && meta.domain !== 'unknown.com';
   const logoUrl = hasRealDomain ? `https://unavatar.io/${meta.domain}` : jobs[0].company_logo_url || '';
@@ -146,11 +166,15 @@ export default async function CompanyPage({
 
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-            <h2 className="text-[15px] font-extrabold text-gray-900">Open Positions at {companyName}</h2>
+            <h2 className="text-[15px] font-extrabold text-gray-900">
+              {jobs.length > SHOW_JOBS
+                ? `Newest ${SHOW_JOBS} of ${jobs.length.toLocaleString()} open positions at ${companyName}`
+                : `Open Positions at ${companyName}`}
+            </h2>
           </div>
 
           <div className="divide-y divide-gray-100">
-            {jobs.map((job) => {
+            {jobs.slice(0, SHOW_JOBS).map((job) => {
               // Only show a salary when real values exist (stored in thousands). Never a default.
               const hasSalary =
                 typeof job.salary_min === 'number' &&

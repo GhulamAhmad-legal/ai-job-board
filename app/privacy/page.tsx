@@ -2,10 +2,22 @@ import type { Metadata } from 'next';
 import LegalPage from '../components/LegalPage';
 import { siteConfig } from '../lib/siteConfig';
 
+const title = `Privacy Policy | ${siteConfig.name}`;
+const description = `How ${siteConfig.name} collects, uses and protects information when you use our job board.`;
+
 export const metadata: Metadata = {
-  title: `Privacy Policy | ${siteConfig.name}`,
-  description: `How ${siteConfig.name} collects, uses and protects information when you use our job board.`,
+  title,
+  description,
   alternates: { canonical: '/privacy' },
+  openGraph: {
+    title,
+    description,
+    url: '/privacy',
+    type: 'website',
+    siteName: siteConfig.name,
+    images: [{ url: '/og-default.png', width: 1200, height: 630 }],
+  },
+  twitter: { card: 'summary_large_image', images: ['/og-default.png'] },
 };
 
 export default function PrivacyPage() {
@@ -41,8 +53,8 @@ export default function PrivacyPage() {
           whatever you include in your message.
         </li>
         <li>
-          <strong>Email alerts (if offered).</strong> If we offer job alert emails, we will collect
-          your email address only to send the alerts you request, and you will be able to unsubscribe.
+          <strong>Job alerts.</strong> If you create a job alert, we collect your email address and
+          the search choices you make (keywords, location, remote-only). See “Job alerts” below.
         </li>
       </ul>
       <p>We do not ask you to create an account to browse jobs.</p>
@@ -97,6 +109,7 @@ export default function PrivacyPage() {
       <ul>
         <li>Hosting and analytics (Vercel).</li>
         <li>Database services (Supabase), which store the job listings shown on the site.</li>
+        <li>Email delivery (Resend), which sends the job alert emails you ask for.</li>
         <li>Advertising partners (such as Google), where ads are shown.</li>
       </ul>
       <p>
@@ -137,15 +150,15 @@ export default function PrivacyPage() {
         was last changed.
       </p>
       <h2>Job alerts</h2>
-<p>
-  If you create a job alert, we collect your email address and the keywords, location and
-  remote-only preference you choose. We use them only to send you the alerts you asked for.
-  We email a confirmation link first, and we send alerts only after you click it. Every alert
-  email has a link to stop that alert, which deletes it and your email address for it. Alert
-  emails are delivered for us by our email provider, Resend. To have your data removed, use
-  the unsubscribe link or write to{' '}
-  <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>.
-</p>
+      <p>
+        If you create a job alert, we collect your email address and the keywords, location and
+        remote-only preference you choose. We use them only to send you the alerts you asked for.
+        We email a confirmation link first, and we send alerts only after you click it. Every alert
+        email has a link to stop that alert, which deletes it and your email address for it. Alert
+        emails are delivered for us by our email provider, Resend. To have your data removed, use
+        the unsubscribe link or write to{' '}
+        <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>.
+      </p>
 
       <h2>Contact us</h2>
       <p>
