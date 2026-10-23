@@ -47,9 +47,9 @@ export default function Header() {
           </div>
 
           <div className="flex items-center space-x-6">
-            <Link href="/contact" className="text-[14px] font-bold text-gray-500 hover:text-blue-600 transition-colors duration-200">
+           {/* <Link href="/contact" className="text-[14px] font-bold text-gray-500 hover:text-blue-600 transition-colors duration-200">
               Contact
-            </Link>
+            </Link>*/}
             <Link href="/post-job" className="bg-[#00060C] text-white px-5 py-2.5 rounded-lg text-[14px] font-bold hover:bg-blue-600 hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5">
               Post a Job — $299
             </Link>

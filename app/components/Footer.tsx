@@ -14,7 +14,6 @@ export default function Footer() {
           <Link href="/jobs/london" className="hover:text-gray-900 transition">Jobs in London</Link>
           <Link href="/jobs/machine-learning-engineer" className="hover:text-gray-900 transition">Machine Learning Engineer Jobs</Link>
         </div>
-        <p>&copy; {new Date().getFullYear()} {siteConfig.name}. All rights reserved.</p>
         <div className="mt-3 flex flex-wrap justify-center gap-x-6 gap-y-2">
           <Link href="/about" className="hover:text-gray-900 transition">About</Link>
           <Link href="/companies" className="hover:text-gray-900 transition">Companies</Link>
@@ -23,6 +22,7 @@ export default function Footer() {
           <Link href="/privacy" className="hover:text-gray-900 transition">Privacy Policy</Link>
           <Link href="/terms" className="hover:text-gray-900 transition">Terms of Service</Link>
         </div>
+        <p>&copy; {new Date().getFullYear()} {siteConfig.name}. All rights reserved.</p>
       </div>
     </footer>
   );
