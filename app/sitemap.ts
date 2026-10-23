@@ -3,6 +3,8 @@ import { getPosts } from './lib/blogIndex';
 import { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { jobPath } from './lib/jobSlug';
+import { getLandingCounts } from './lib/landingData';
+import { MIN_JOBS } from './lib/landingPages';
 
 // Rebuilt at most once an hour: new scraper jobs show up without a redeploy, and crawlers
 // don't trigger a full Supabase paging run on every hit.
@@ -65,7 +67,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...(lastModified.getTime() > 0 ? { lastModified } : {}),
   }));
 
+  // Landing pages (/jobs/remote, /jobs/san-francisco, ...) that currently have enough openings.
+  const landingCounts = (await getLandingCounts()).filter((c) => c.count >= MIN_JOBS);
+  const landingUrls: MetadataRoute.Sitemap = landingCounts.map((c) => ({
+    url: `${baseUrl}/jobs/${c.slug}`,
+  }));
+
   const staticPaths = [
+    ...(landingCounts.length ? ['/jobs'] : []),
     '/companies',
     '/post-job',
     '/about',
@@ -83,6 +92,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: baseUrl, lastModified: new Date() },
     ...staticPaths.map((p) => ({ url: `${baseUrl}${p}` })),
+    ...landingUrls,
     ...postUrls,
     ...companyUrls,
     ...jobUrls,
