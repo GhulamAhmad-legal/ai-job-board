@@ -8,6 +8,7 @@ import { getJobsForWidget } from '../../lib/blogJobs';
 import { siteConfig } from '../../lib/siteConfig';
 import { getSiteUrl } from '../../lib/siteUrl';
 import { jobPath } from '../../lib/jobSlug';
+import { shortLocation } from '../../lib/locationLabel';
 
 // Published articles are built ahead of time; scheduled ones appear on their date (checked hourly).
 export const revalidate = 3600;
@@ -141,7 +142,7 @@ export default async function BlogPostPage({
                   typeof job.salary_max === 'number' &&
                   job.salary_min > 0 &&
                   job.salary_max >= job.salary_min;
-                const location = (job.location ?? '').split(';')[0];
+                const location = shortLocation(job.location).label;
                 return (
                   <Link
                     key={job.id}

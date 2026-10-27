@@ -10,9 +10,11 @@ import {
   landingHeading,
   landingNoun,
   joinList,
+  landingCoverage,
   MIN_JOBS,
 } from '../../lib/landingPages';
 import { getLandingData, getLandingCounts, SHOW_JOBS } from '../../lib/landingData';
+import { locationWithMore } from '../../lib/locationLabel';
 
 export const revalidate = 3600;
 export const dynamicParams = false; // only the slugs in landingPages.ts exist; anything else is a 404
@@ -63,7 +65,7 @@ export default async function LandingPage({
   const data = await getLandingData(slug);
   if (!data) notFound();
 
-  const { page, count, companyCount, topCompanies, pay, jobs } = data;
+  const { page, count, companyCount, topCompanies, pay, stats, jobs } = data;
   const heading = landingHeading(page);
   const noun = landingNoun(page);
 
@@ -87,6 +89,26 @@ export default async function LandingPage({
   };
 
   const lead = topCompanies.slice(0, 3);
+
+  // Facts that make each page different from the others, all computed from the listings.
+  const withCount = (rows: { name: string; count: number }[]) =>
+    joinList(rows.map((r) => `${r.name} (${r.count.toLocaleString()})`));
+  const findings: string[] = [];
+  if (page.kind !== 'role' && stats.topRoles.length > 0) {
+    findings.push(`The most common role titles are ${withCount(stats.topRoles)}.`);
+  }
+  if (page.kind !== 'location' && stats.topPlaces.length > 0) {
+    findings.push(`The cities with the most on-site and hybrid openings are ${withCount(stats.topPlaces)}.`);
+  }
+  const isRemotePage = page.kind === 'remote' || !!page.remote;
+  const isAiPage = !!page.tags?.includes('AI');
+  const tiles = [
+    { label: 'Open roles', value: count.toLocaleString() },
+    { label: 'Employers', value: companyCount.toLocaleString() },
+    ...(isRemotePage ? [] : [{ label: 'Fully remote', value: `${stats.remotePct}%` }]),
+    { label: 'State pay', value: `${stats.payPct}%` },
+    ...(isAiPage ? [] : [{ label: 'AI-titled', value: `${stats.aiPct}%` }]),
+  ];
 
   return (
     <main className="min-h-screen bg-[#F5F6F8] font-sans pb-20">
@@ -148,8 +170,17 @@ export default async function LandingPage({
                   per year.
                 </p>
               )}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+                {tiles.map((t) => (
+                  <div key={t.label} className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                    <div className="text-[22px] leading-tight font-black text-gray-900">{t.value}</div>
+                    <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">{t.label}</div>
+                  </div>
+                ))}
+              </div>
+              {findings.length > 0 && <p>{findings.join(' ')}</p>}
               <p className="text-[14px] text-gray-500">
-                Listings come from employers’ own career pages. Apply on the employer’s site.
+                {landingCoverage(page)} Listings come from employers’ own career pages. Apply on the employer’s site.
               </p>
             </div>
           ) : (
@@ -195,7 +226,7 @@ export default async function LandingPage({
                   typeof job.salary_max === 'number' &&
                   job.salary_min > 0 &&
                   job.salary_max >= job.salary_min;
-                const locationLabel = (job.location ?? '').split(';')[0];
+                const locationLabel = locationWithMore(job.location, (job.group_size ?? 1) - 1);
 
                 return (
                   <Link
@@ -211,11 +242,6 @@ export default async function LandingPage({
                         <div className="flex flex-wrap items-center gap-3 text-[14px]">
                           <span className="text-gray-900 font-bold">{job.company}</span>
                           {locationLabel && <span className="text-gray-500 font-medium">{locationLabel}</span>}
-                          {(job.group_size ?? 1) > 1 && (
-                            <span className="text-gray-400 font-medium">
-                              +{(job.group_size ?? 1) - 1} more locations
-                            </span>
-                          )}
                           {hasSalary && (
                             <span className="text-green-700 font-bold bg-green-50 px-2 py-0.5 rounded border border-green-100">
                               ${job.salary_min}K

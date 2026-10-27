@@ -114,3 +114,22 @@ export function landingLinkLabel(lp: LandingPage): string {
   if (lp.kind === 'location') return `Jobs in ${lp.name}`;
   return `${lp.name} jobs`;
 }
+
+// One or two sentences saying exactly what a landing page includes (built from its own settings).
+export function landingCoverage(lp: LandingPage): string {
+  const list = (words: string[]) => joinList(words.map((w) => `“${w}”`));
+  if (lp.kind === 'remote') {
+    return 'Includes roles the employer marks as fully remote. Hybrid and office roles with a remote option are not counted.';
+  }
+  if (lp.kind === 'topic') {
+    const parts = [
+      lp.tags?.includes('AI') ? 'roles our system labels AI, based on the job title' : '',
+      lp.tags?.includes('Remote') ? 'limited to fully remote ones' : '',
+    ].filter(Boolean);
+    return `Includes ${parts.join(', ')}.`;
+  }
+  if (lp.kind === 'location') {
+    return `Includes listings whose location mentions ${list(lp.match)}. A role listed in several places is counted on each place’s page, so nearby pages overlap.`;
+  }
+  return `Includes roles whose title mentions ${list(lp.match)}.${lp.remote ? ' Only fully remote roles are included.' : ''}`;
+}

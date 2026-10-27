@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { cache } from 'react';
 import { landingPages, getLandingPage, type LandingPage } from './landingPages';
+import { cityOf } from './locationLabel';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,14 +53,46 @@ function median(values: number[]): number {
   return s.length % 2 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2);
 }
 
+export type LandingStats = {
+  remotePct: number; // % of these roles tagged fully remote
+  aiPct: number; // % labelled AI (by title)
+  payPct: number; // % that state a pay range
+  topRoles: { name: string; count: number }[]; // most common titles, seniority removed
+  topPlaces: { name: string; count: number }[]; // cities with the most roles
+};
+
 export type LandingData = {
   page: LandingPage;
   count: number;
   companyCount: number;
   topCompanies: { name: string; count: number }[];
   pay: { listings: number; minMedian: number; maxMedian: number } | null;
+  stats: LandingStats;
   jobs: LandingJob[];
 };
+
+// "Senior Software Engineer, Backend (Remote)" -> "Software Engineer"
+const SENIORITY = /\b(senior|sr\.?|staff|principal|junior|jr\.?|lead|associate|distinguished|entry[- ]level|early career|new grad|ii|iii|iv)\b/gi;
+export function roleFamily(title: string | null | undefined): string {
+  const head = String(title ?? '').split(/\s[-–—]\s|[,(|:]/)[0];
+  return head.replace(SENIORITY, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// Counts values and returns the `limit` most common ones that occur at least `min` times.
+function topCounts(values: (string | null)[], limit = 3, min = 2): { name: string; count: number }[] {
+  const counts = new Map<string, { name: string; count: number }>();
+  for (const v of values) {
+    if (!v) continue;
+    const key = v.toLowerCase();
+    const row = counts.get(key);
+    if (row) row.count++;
+    else counts.set(key, { name: v, count: 1 });
+  }
+  return Array.from(counts.values())
+    .filter((r) => r.count >= min)
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, limit);
+}
 
 // Everything one landing page needs. Shared by generateMetadata and the page (one fetch).
 export const getLandingData = cache(async (slug: string): Promise<LandingData | null> => {
@@ -67,9 +100,16 @@ export const getLandingData = cache(async (slug: string): Promise<LandingData | 
   if (!page) return null;
 
   // 1. Every matching job, light columns only, so counts and stats are exact.
-  const rows: { company: string; salary_min: number | null; salary_max: number | null }[] = [];
+  const rows: {
+    company: string;
+    title: string | null;
+    location: string | null;
+    tags: unknown;
+    salary_min: number | null;
+    salary_max: number | null;
+  }[] = [];
   for (let from = 0; from < 10000; from += 1000) {
-    const { data, error } = await applyFilter(base('company, salary_min, salary_max'), page)
+    const { data, error } = await applyFilter(base('company, title, location, tags, salary_min, salary_max'), page)
       .order('id', { ascending: true })
       .range(from, from + 999);
     if (error || !data) break;
@@ -108,12 +148,26 @@ export const getLandingData = cache(async (slug: string): Promise<LandingData | 
     }
   }
 
+  // Facts about this group of roles (all computed from the listings, none written by hand).
+  const total = Math.max(rows.length, 1);
+  const hasTag = (r: { tags: unknown }, tag: string) => Array.isArray(r.tags) && (r.tags as unknown[]).includes(tag);
+  const statesPay = (r: { salary_min: number | null; salary_max: number | null }) =>
+    typeof r.salary_min === 'number' && typeof r.salary_max === 'number' && r.salary_min > 0 && r.salary_max >= r.salary_min;
+  const stats: LandingStats = {
+    remotePct: Math.round((rows.filter((r) => hasTag(r, 'Remote')).length / total) * 100),
+    aiPct: Math.round((rows.filter((r) => hasTag(r, 'AI')).length / total) * 100),
+    payPct: Math.round((rows.filter(statesPay).length / total) * 100),
+    topRoles: topCounts(rows.map((r) => roleFamily(r.title) || null)),
+    topPlaces: topCounts(rows.map((r) => cityOf(r.location))),
+  };
+
   return {
     page,
     count: rows.length,
     companyCount: perCompany.size,
     topCompanies,
     pay,
+    stats,
     jobs: (jobs ?? []) as LandingJob[],
   };
 });

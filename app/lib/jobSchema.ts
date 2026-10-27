@@ -94,6 +94,7 @@ const WORLD_CITIES: Record<string, string> = {
   'abu dhabi': 'AE', doha: 'QA', riyadh: 'SA', 'hong kong': 'HK', taipei: 'TW', shanghai: 'CN',
   beijing: 'CN', jakarta: 'ID', 'kuala lumpur': 'MY', manila: 'PH', bangkok: 'TH', nairobi: 'KE',
   lagos: 'NG', 'cape town': 'ZA', johannesburg: 'ZA',
+  halifax: 'CA', 'ciudad de méxico': 'MX', 'ciudad de mexico': 'MX', cdmx: 'MX',
 };
 
 // Short names / area names -> the city we report.
@@ -149,15 +150,32 @@ function expandCities(token: string): string[] {
   return parts.every(isKnownCity) ? parts : [token];
 }
 
+// Words that are not places (or are too broad for an address): such a part is dropped, and a job
+// whose whole location is like this gets no JobPosting markup instead of a made-up address.
+const NOT_A_PLACE =
+  /^(?:perm(?:anent)?|tbd|tba|none|na|various|multiple(?: locations)?|anywhere|flexible|global|worldwide|nationwide|tier\s*\d|asia|emea|apac|latam|europe|north america|west coast|east coast)$/i;
+
 // One location field -> a clean list of single places. "Remote" parts are dropped.
 export function splitPlaces(text: string): string[] {
+  const prepared = String(text ?? '')
+    .replace(/\bN\/A\b/gi, ' ') // "PERM - N/A" must not be split at the slash
+    .replace(/\bUSCA\b/gi, 'United States and Canada');
   const out: string[] = [];
-  for (const raw of String(text ?? '').split(SPLIT_RE)) {
+  for (const raw of prepared.split(SPLIT_RE)) {
     const t = tidy(raw);
-    if (!t) continue;
+    if (!t || NOT_A_PLACE.test(t)) continue;
     out.push(...expandCities(t));
   }
   return out;
+}
+
+// If the location says the job is fully remote, returns the region text ("United States", "U.S.",
+// "Canada - Remote"...), otherwise null. Handles "Remote - X", "Remote, X" and "Remote (X)".
+// "Remote-Friendly ..." is NOT fully remote.
+export function remoteRegionOf(location: string): string | null {
+  const t = String(location ?? '').trim();
+  const m = t.match(/^remote(?:\s+-\s+|\s*,\s*)(.+)$/i) || t.match(/^remote\s*\(([^)]+)\)\s*$/i);
+  return m ? m[1].trim() : null;
 }
 
 // "Mountain View, California (HQ)"  ->  { locality: 'Mountain View', region: 'CA', country: 'US' }

@@ -54,7 +54,7 @@ export default async function JobsIndex() {
 
   const allGroups: BrowseGroup[] = [
     { id: 'popular', title: 'Popular searches', blurb: 'Start with the biggest groups of open roles.', icon: 'spark', featured: true, items: popular },
-    { id: 'location', title: 'Jobs by location', blurb: 'Find roles in your city or hub.', icon: 'pin', items: places },
+    { id: 'location', title: 'Jobs by location', blurb: 'Find roles in your city or hub. A role listed in several places is counted in each, so these numbers overlap.', icon: 'pin', items: places },
     { id: 'role', title: 'Jobs by role', blurb: 'Jump straight to the kind of work you do.', icon: 'briefcase', items: roles },
   ];
   const groups = allGroups.filter((g) => g.items.length > 0);

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import Link from 'next/link';
 import { jobPath } from './lib/jobSlug';
+import { locationWithMore } from './lib/locationLabel';
 
 const PAGE_SIZE = 150;
 
@@ -26,8 +27,7 @@ function isFullyRemote(job: any) {
 
 // Location text for a card. Roles posted in several places show "+N more".
 function locationLabel(job: any) {
-  const first = (job.location ?? '').split(';')[0];
-  return (job.group_size ?? 1) > 1 ? `${first} +${job.group_size - 1} more` : first;
+  return locationWithMore(job.location, (job.group_size ?? 1) - 1);
 }
 
 interface Props {

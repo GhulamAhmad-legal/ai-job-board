@@ -5,10 +5,11 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { cleanDescription } from '../../lib/cleanDescription';
-import { officePlaces, remoteTargets, inferEmploymentType, allInUS } from '../../lib/jobSchema';
+import { officePlaces, remoteTargets, inferEmploymentType, allInUS, remoteRegionOf } from '../../lib/jobSchema';
 import { getCompanyMeta } from '../../lib/companiesData';
 import { jobPath, parseJobRef } from '../../lib/jobSlug';
 import BackLink from '../../components/BackLink';
+import { shortLocation, locationWithMore } from '../../lib/locationLabel';
 import { getLandingCounts } from '../../lib/landingData';
 import { MIN_JOBS, jobHubs, landingLinkLabel } from '../../lib/landingPages';
 import { getMoreFromCompany, getSimilarJobs, type RelatedJob } from '../../lib/relatedJobs';
@@ -68,7 +69,7 @@ export async function generateMetadata({
 
   if (!job) return { title: `Job Not Found | ${siteConfig.name}`, robots: { index: false } };
 
-  const location = (job.location ?? '').split(';')[0];
+  const location = shortLocation(job.location).label;
   const cleanTitle = String(job.title).replace(/\s+/g, ' ').trim();
   const title = `${cleanTitle} at ${job.company}${location ? ` – ${location}` : ''} | ${siteConfig.name}`;
 
@@ -83,7 +84,7 @@ export async function generateMetadata({
       ? ` Pay: $${job.salary_min}K per year.`
       : ` Pay: $${job.salary_min}K–$${job.salary_max}K per year.`
     : '';
-  const remoteText = /^remote(\s+-\s+|\s*,\s*)/i.test(job.location ?? '') ? ' Fully remote role.' : '';
+  const remoteText = remoteRegionOf(job.location ?? '') !== null ? ' Fully remote role.' : '';
   const description = `${cleanTitle} at ${job.company}${location ? ` in ${location}` : ''}.${remoteText}${salaryText} Read the full description and apply on the employer’s website.`;
   // A role posted in several locations has one main page; the others point to it and stay out of search results.
   let canonicalPath = jobPath(job);
@@ -129,7 +130,7 @@ function RelatedList({
             typeof j.salary_max === 'number' &&
             j.salary_min > 0 &&
             j.salary_max >= j.salary_min;
-          const place = (j.location ?? '').split(';')[0];
+          const place = shortLocation(j.location).label;
           return (
             <Link key={j.id} href={jobPath(j)} className="block px-6 py-4 hover:bg-blue-50/40 transition-colors">
               <div className="text-[16px] font-bold text-gray-900">{j.title}</div>
@@ -165,7 +166,7 @@ export default async function JobPage({
   } catch {}
   if (`/job/${currentId}` !== canonicalPath) permanentRedirect(canonicalPath);
 
-  const locationLabel = (job.location ?? '').split(';')[0];
+  const locationLabel = locationWithMore(job.location, (job.group_size ?? 1) - 1);
 
   // Only show/emit salary when real values exist. No made-up defaults.
   // Assumes salary_min / salary_max are stored in thousands (e.g. 150 = $150K).
@@ -178,9 +179,9 @@ export default async function JobPage({
   // "Remote - United States" / "Remote, US" = fully remote.
   // "Remote-Friendly (Travel-Required) | San Francisco, CA" is NOT fully remote.
   const rawLocation = String(job.location ?? '').trim();
-  const remoteMatch = rawLocation.match(/^remote(?:\s+-\s+|\s*,\s*)(.+)$/i);
-  const isFullyRemote = !!remoteMatch;
-  const remoteRegion = remoteMatch ? remoteMatch[1].trim() : '';
+  const remoteArea = remoteRegionOf(rawLocation);
+  const isFullyRemote = remoteArea !== null;
+  const remoteRegion = remoteArea ?? '';
 
   // Other locations of the same role (only when the employer posted it in several places).
   const siblings =
@@ -376,7 +377,7 @@ export default async function JobPage({
               <ul className="grid gap-2 sm:grid-cols-2">
                 {siblings.map((sib) => (
                   <li key={sib.id} className="text-[14px] text-gray-700 flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-lg px-3 py-2">
-                    <span className="font-medium">{(sib.location ?? '').split(';')[0] || 'Location not listed'}</span>
+                    <span className="font-medium">{shortLocation(sib.location).label || 'Location not listed'}</span>
                     {sib.apply_url && (
                       <a
                         href={sib.apply_url}

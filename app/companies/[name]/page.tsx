@@ -6,6 +6,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getCompanyMeta } from '../../lib/companiesData';
 import { jobPath } from '../../lib/jobSlug';
+import { locationWithMore } from '../../lib/locationLabel';
 
 export const revalidate = 3600;
 
@@ -181,7 +182,7 @@ export default async function CompanyPage({
                 typeof job.salary_max === 'number' &&
                 job.salary_min > 0 &&
                 job.salary_max >= job.salary_min;
-              const locationLabel = (job.location ?? '').split(';')[0];
+              const locationLabel = locationWithMore(job.location, (job.group_size ?? 1) - 1);
 
               return (
                 <Link href={jobPath(job)} key={job.id} className="block group hover:bg-blue-50/30 transition-colors">
@@ -192,9 +193,6 @@ export default async function CompanyPage({
                       </h3>
                       <div className="flex flex-wrap items-center gap-3 text-[14px]">
                         {locationLabel && <span className="text-gray-500 font-medium">{locationLabel}</span>}
-                        {(job.group_size ?? 1) > 1 && (
-                          <span className="text-gray-400 font-medium">+{(job.group_size ?? 1) - 1} more locations</span>
-                        )}
                         {hasSalary && (
                           <span className="text-green-700 font-bold bg-green-50 px-2 py-0.5 rounded border border-green-100">
                             ${job.salary_min}K{job.salary_max !== job.salary_min ? ` – $${job.salary_max}K` : ''}{' '}
