@@ -164,7 +164,7 @@ export const posts: PostMeta[] = [
     title: 'Forward Deployed Engineer Jobs: Who Is Hiring and What They Ask For',
     description:
       '202 forward deployed engineer listings at 17 companies: who hires, what the role asks for, where the jobs are and the median posted pay of about $217K.',
-    date: '2026-11-02',
+    date: '2026-10-31',
     tags: ['Role guide'],
     related: [
       'ai-machine-learning-salary-ranges-from-job-listings',
