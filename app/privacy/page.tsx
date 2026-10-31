@@ -49,8 +49,8 @@ export default function PrivacyPage() {
           such as your IP address, browser type and the pages requested, for security and reliability.
         </li>
         <li>
-          <strong>Messages you send us.</strong> If you email us, we receive your email address and
-          whatever you include in your message.
+          <strong>Messages you send us.</strong> If you email us or use the contact form, we receive
+          your name, your email address and whatever you include in your message.
         </li>
         <li>
           <strong>Job alerts.</strong> If you create a job alert, we collect your email address and
@@ -120,7 +120,8 @@ export default function PrivacyPage() {
       <h2>How long we keep information</h2>
       <p>
         We keep analytics and log data only as long as needed for the purposes above. Emails you send
-        us are kept as long as necessary to handle your request and for our records.
+        us are kept as long as necessary to handle your request and for our records. A job alert is
+        kept until you unsubscribe, and then it is deleted.
       </p>
 
       <h2>Your rights</h2>

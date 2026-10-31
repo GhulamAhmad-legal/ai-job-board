@@ -26,6 +26,7 @@ export type JobWidget = {
   heading: string;
   tags?: string[]; // e.g. ['AI'] or ['AI', 'Remote'] (job must have all of them)
   titleContains?: string;
+  titleRegex?: string; // case-insensitive pattern on the title, e.g. '\\mintern(ship)?s?\\M' (whole words)
   locationContains?: string;
   descriptionContains?: string;
   salaryOnly?: boolean; // only jobs that state a salary
@@ -49,6 +50,7 @@ export const posts: PostMeta[] = [
     title: `How ${siteConfig.name} Collects, Labels and Updates Job Listings`,
     description: `Where ${siteConfig.name} listings come from, how salary, remote and AI labels are decided, and what the data does and does not cover.`,
     date: '2026-10-17',
+    updated: '2026-10-27',
     tags: ['About the data'],
     related: [
       'ai-machine-learning-salary-ranges-from-job-listings',
@@ -155,6 +157,113 @@ export const posts: PostMeta[] = [
       'who-is-hiring-in-ai-and-tech-open-roles-by-company',
     ],
     jobs: [{ heading: 'Current AI roles that mention PyTorch', tags: ['AI'], descriptionContains: 'pytorch' }],
+  },
+  // ---------------- Batch 2 ----------------
+  {
+    slug: 'forward-deployed-engineer-jobs-who-hires-and-what-they-ask-for',
+    title: 'Forward Deployed Engineer Jobs: Who Is Hiring and What They Ask For',
+    description:
+      '202 forward deployed engineer listings at 17 companies: who hires, what the role asks for, where the jobs are and the median posted pay of about $217K.',
+    date: '2026-11-02',
+    tags: ['Role guide'],
+    related: [
+      'ai-machine-learning-salary-ranges-from-job-listings',
+      'who-is-hiring-in-ai-and-tech-open-roles-by-company',
+      'skills-ai-job-descriptions-ask-for',
+    ],
+    companies: {
+      heading: 'Employers hiring forward deployed engineers',
+      names: ['Databricks', 'OpenAI', 'Scale AI', 'Cohere', 'Anthropic'],
+    },
+    jobs: [{ heading: 'Current forward deployed engineer roles', titleContains: 'forward deployed' }],
+  },
+  {
+    slug: 'entry-level-and-internship-ai-tech-jobs-who-is-hiring',
+    title: 'Entry-Level and Internship Roles at AI and Tech Companies: Who Is Hiring',
+    description:
+      '174 internship, new-grad and early-career listings at AI and tech companies: which employers hire, what the roles look like and why so few state pay.',
+    date: '2026-11-04',
+    tags: ['Early career'],
+    related: [
+      'do-you-need-a-phd-for-ai-jobs',
+      'who-is-hiring-in-ai-and-tech-open-roles-by-company',
+      'ai-machine-learning-salary-ranges-from-job-listings',
+    ],
+    companies: {
+      heading: 'Employers with the most early-career roles',
+      names: ['Waymo', 'Databricks', 'Together AI', 'Figure AI', 'Figma', 'Scale AI'],
+    },
+    jobs: [
+      { heading: 'Current internship roles', titleRegex: '\\mintern(ship)?s?\\M' },
+      { heading: 'Current new-grad roles', titleRegex: '\\mnew grad(uate)?s?\\M' },
+    ],
+  },
+  {
+    slug: 'do-you-need-a-phd-for-ai-jobs',
+    title: 'Do You Need a PhD for AI Jobs? What 688 Job Descriptions Say',
+    description:
+      'About one in five AI job descriptions mentions a PhD. We looked at 688 AI roles to see how often degrees come up and how often experience can substitute.',
+    date: '2026-11-06',
+    tags: ['Careers'],
+    related: [
+      'entry-level-and-internship-ai-tech-jobs-who-is-hiring',
+      'skills-ai-job-descriptions-ask-for',
+      'ai-machine-learning-salary-ranges-from-job-listings',
+    ],
+    jobs: [
+      {
+        heading: 'AI roles whose descriptions mention equivalent experience',
+        tags: ['AI'],
+        descriptionContains: 'or equivalent',
+      },
+    ],
+  },
+  {
+    slug: 'ai-safety-alignment-and-policy-careers-who-is-hiring',
+    title: 'AI Safety, Alignment and Policy Careers: Who Is Hiring and in What Roles',
+    description:
+      '137 safety, alignment and policy-related listings at 16 AI and tech companies. Only about one in five is research; most are engineering, policy and operations.',
+    date: '2026-11-09',
+    tags: ['Role guide'],
+    related: [
+      'who-is-hiring-in-ai-and-tech-open-roles-by-company',
+      'do-you-need-a-phd-for-ai-jobs',
+      'entry-level-and-internship-ai-tech-jobs-who-is-hiring',
+    ],
+    companies: {
+      heading: 'Employers hiring for safety and policy roles',
+      names: ['Anthropic', 'OpenAI', 'Cohere', 'Discord', 'Reddit'],
+    },
+    jobs: [
+      {
+        heading: 'Current alignment, interpretability and safeguards roles',
+        titleRegex: '\\m(alignment|interpretability|safeguards|red team|ai safety)\\M',
+      },
+    ],
+  },
+  {
+    slug: 'is-prompt-engineer-a-real-job',
+    title: 'Is "Prompt Engineer" a Real Job? What Job Postings Actually Show',
+    description:
+      'Only one of about 6,100 listings has "prompt" in its title, yet 153 roles mention prompting in the description. Where the skill really shows up.',
+    date: '2026-11-11',
+    tags: ['Careers'],
+    related: [
+      'skills-ai-job-descriptions-ask-for',
+      'forward-deployed-engineer-jobs-who-hires-and-what-they-ask-for',
+      'ai-machine-learning-salary-ranges-from-job-listings',
+    ],
+    companies: {
+      heading: 'Employers whose roles mention prompting most',
+      names: ['Sierra', 'Anthropic', 'Harvey', 'OpenAI', 'Databricks'],
+    },
+    jobs: [
+      {
+        heading: 'Current AI roles that mention prompt engineering',
+        tags: ['AI'],
+        descriptionContains: 'prompt engineering',
+      },
+    ],
   },
 ];
 

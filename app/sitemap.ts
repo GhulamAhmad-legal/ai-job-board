@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { jobPath } from './lib/jobSlug';
 import { getLandingCounts } from './lib/landingData';
 import { MIN_JOBS } from './lib/landingPages';
+import { shouldIndexJob } from './lib/coreRole';
 
 // Rebuilt at most once an hour: new scraper jobs show up without a redeploy, and crawlers
 // don't trigger a full Supabase paging run on every hit.
@@ -58,7 +59,10 @@ async function fetchAllActiveJobs(): Promise<JobRow[]> {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const jobs = await fetchAllActiveJobs();
 
-  const jobUrls: MetadataRoute.Sitemap = jobs.map((job) => ({
+  // Only on-topic roles go to Google; every job stays on the site (see lib/coreRole.ts).
+  const indexableJobs = jobs.filter((job) => shouldIndexJob(job.title));
+
+  const jobUrls: MetadataRoute.Sitemap = indexableJobs.map((job) => ({
     url: `${baseUrl}${jobPath(job)}`,
     ...(job.created_at ? { lastModified: new Date(job.created_at) } : {}),
   }));

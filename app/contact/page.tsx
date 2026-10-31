@@ -13,6 +13,7 @@ export default function ContactPage() {
   });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [trap, setTrap] = useState(''); // spam trap: people never see or fill this
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -29,7 +30,7 @@ export default function ContactPage() {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, website: trap }),
       });
 
       const data = await res.json();
@@ -84,6 +85,7 @@ export default function ContactPage() {
                 id="name"
                 name="name"
                 required
+                maxLength={100}
                 value={formData.name}
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
@@ -100,6 +102,7 @@ export default function ContactPage() {
                 id="email"
                 name="email"
                 required
+                maxLength={254}
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
@@ -136,6 +139,7 @@ export default function ContactPage() {
                 id="message"
                 name="message"
                 required
+                maxLength={5000}
                 rows={5}
                 value={formData.message}
                 onChange={handleChange}
@@ -143,6 +147,18 @@ export default function ContactPage() {
                 placeholder="Write your message here..."
               />
             </div>
+
+            {/* Spam trap: hidden from people, filled in by bots */}
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="hidden"
+              value={trap}
+              onChange={(e) => setTrap(e.target.value)}
+            />
 
             {status === 'error' && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">

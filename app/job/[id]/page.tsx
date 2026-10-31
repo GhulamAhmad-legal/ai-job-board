@@ -13,6 +13,7 @@ import { shortLocation, locationWithMore } from '../../lib/locationLabel';
 import { getLandingCounts } from '../../lib/landingData';
 import { MIN_JOBS, jobHubs, landingLinkLabel } from '../../lib/landingPages';
 import { getMoreFromCompany, getSimilarJobs, type RelatedJob } from '../../lib/relatedJobs';
+import { shouldIndexJob } from '../../lib/coreRole';
 
 export const revalidate = 3600;
 
@@ -102,7 +103,8 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical: url },
-    ...(duplicate ? { robots: { index: false, follow: true } } : {}),
+    // Extra-location copies and off-topic roles (sales, recruiting, shift work ...) stay on the site but out of Google.
+    ...(duplicate || !shouldIndexJob(job.title) ? { robots: { index: false, follow: true } } : {}),
     openGraph: { title, description, url, type: 'website', siteName: siteConfig.name },
   };
 }

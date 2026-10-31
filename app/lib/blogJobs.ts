@@ -31,6 +31,7 @@ export async function getJobsForWidget(w: JobWidget, limit = 6): Promise<JobCard
 
     if (w.tags?.length) q = q.filter('tags', 'cs', JSON.stringify(w.tags));
     if (w.titleContains) q = q.ilike('title', `%${clean(w.titleContains)}%`);
+    if (w.titleRegex) q = q.filter('title', 'imatch', w.titleRegex); // whole-word, case-insensitive
     if (w.locationContains) q = q.ilike('location', `%${clean(w.locationContains)}%`);
     if (w.descriptionContains) q = q.ilike('description', `%${clean(w.descriptionContains)}%`);
     if (w.salaryOnly) q = q.not('salary_min', 'is', null);

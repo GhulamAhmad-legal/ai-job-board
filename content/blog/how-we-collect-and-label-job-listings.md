@@ -35,6 +35,8 @@ Some remote roles are limited to a country or region, so read the location on ea
 
 A job is marked AI when its title contains an AI or machine-learning term. The terms we look for include AI, ML, machine learning, deep learning, LLM, NLP, computer vision, generative, neural, data scientist, research scientist, applied scientist and prompt.
 
+Roles in functions such as recruiting, sales, marketing, finance and legal are not marked AI, even when the title mentions AI. "Technical Recruiter, AI" is an example.
+
 This is a simple rule, and it has limits. A role with a generic title, such as "Software Engineer" on an AI team, is not tagged. Occasionally a title with one of those words is not really an AI job. The homepage shows AI-tagged roles first and the rest after them.
 
 ## What the data does not cover

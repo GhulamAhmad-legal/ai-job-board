@@ -73,10 +73,17 @@ export default function TermsPage() {
 
       <h2>Employers and paid job postings</h2>
       <p>
-        Employers may be able to pay to post or feature a job. Pricing and any additional terms will
-        be shown before purchase. Paid postings must be genuine, accurate and lawful. They must not
+        We plan to let employers pay to post or feature a job, but this is not available yet. When it
+        is, pricing and any additional terms will be shown before purchase. Paid postings must be genuine, accurate and lawful. They must not
         ask applicants to pay fees or share sensitive financial details. We may decline or remove a
         posting that breaks these rules. Refund eligibility, if any, will be described at checkout.
+      </p>
+
+      <h2>Job alerts</h2>
+      <p>
+        You can ask for email alerts about new listings. We do our best to send them, but we do not
+        promise that every matching listing will be included or that emails will arrive at a
+        particular time. You can stop an alert at any time using the link in each email.
       </p>
 
       <h2>Third-party links</h2>
