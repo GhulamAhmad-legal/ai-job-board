@@ -182,7 +182,7 @@ export const posts: PostMeta[] = [
     title: 'Entry-Level and Internship Roles at AI and Tech Companies: Who Is Hiring',
     description:
       '174 internship, new-grad and early-career listings at AI and tech companies: which employers hire, what the roles look like and why so few state pay.',
-    date: '2026-11-04',
+    date: '2026-11-02',
     tags: ['Early career'],
     related: [
       'do-you-need-a-phd-for-ai-jobs',
@@ -203,7 +203,7 @@ export const posts: PostMeta[] = [
     title: 'Do You Need a PhD for AI Jobs? What 688 Job Descriptions Say',
     description:
       'About one in five AI job descriptions mentions a PhD. We looked at 688 AI roles to see how often degrees come up and how often experience can substitute.',
-    date: '2026-11-06',
+    date: '2026-11-04',
     tags: ['Careers'],
     related: [
       'entry-level-and-internship-ai-tech-jobs-who-is-hiring',
@@ -223,7 +223,7 @@ export const posts: PostMeta[] = [
     title: 'AI Safety, Alignment and Policy Careers: Who Is Hiring and in What Roles',
     description:
       '137 safety, alignment and policy-related listings at 16 AI and tech companies. Only about one in five is research; most are engineering, policy and operations.',
-    date: '2026-11-09',
+    date: '2026-11-06',
     tags: ['Role guide'],
     related: [
       'who-is-hiring-in-ai-and-tech-open-roles-by-company',
@@ -246,7 +246,7 @@ export const posts: PostMeta[] = [
     title: 'Is "Prompt Engineer" a Real Job? What Job Postings Actually Show',
     description:
       'Only one of about 6,100 listings has "prompt" in its title, yet 153 roles mention prompting in the description. Where the skill really shows up.',
-    date: '2026-11-11',
+    date: '2026-11-09',
     tags: ['Careers'],
     related: [
       'skills-ai-job-descriptions-ask-for',
