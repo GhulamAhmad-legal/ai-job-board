@@ -312,6 +312,156 @@ export const curatedCompanies: Record<string, CompanyInfo> = {
     domain: "writer.com",
     industry: "Enterprise Generative AI",
     description: "Enterprise generative AI platform for building AI agents and writing assistance."
+  },
+  "Applied Intuition": {
+    name: "Applied Intuition",
+    domain: "appliedintuition.com",
+    industry: "Autonomy Software",
+    description: "Software and tools for developing, testing and deploying autonomous vehicles and other autonomous machines."
+  },
+  "Luma AI": {
+    name: "Luma AI",
+    domain: "lumalabs.ai",
+    industry: "Generative Video & 3D",
+    description: "AI company building generative models for video and 3D content, known for its Dream Machine video generator."
+  },
+  "Suno": {
+    name: "Suno",
+    domain: "suno.com",
+    industry: "AI Music Generation",
+    description: "Generative AI service that creates songs, with vocals and instruments, from text prompts."
+  },
+  "Cartesia": {
+    name: "Cartesia",
+    domain: "cartesia.ai",
+    industry: "Voice AI",
+    description: "Builds real-time voice AI models and APIs for speech generation and voice agents."
+  },
+  "Cognition": {
+    name: "Cognition",
+    domain: "cognition.ai",
+    industry: "AI Software Engineering Agents",
+    description: "Builds Devin, an AI software engineering agent, and related tools for automated coding."
+  },
+  "Anyscale": {
+    name: "Anyscale",
+    domain: "anyscale.com",
+    industry: "Distributed AI Compute Platform",
+    description: "Company behind Ray, the open-source framework for scaling AI and Python workloads, and a managed platform built on it."
+  },
+  "Snorkel AI": {
+    name: "Snorkel AI",
+    domain: "snorkel.ai",
+    industry: "AI Data Development",
+    description: "Platform for labeling, curating and evaluating the data used to build and adapt AI models."
+  },
+  "SambaNova": {
+    name: "SambaNova",
+    domain: "sambanova.ai",
+    industry: "AI Chips & Inference Cloud",
+    description: "Builds AI chips and full-stack systems, and offers cloud inference for large models."
+  },
+  "Etched": {
+    name: "Etched",
+    domain: "etched.com",
+    industry: "AI Hardware",
+    description: "Develops specialized chips designed to run transformer AI models."
+  },
+  "Crusoe": {
+    name: "Crusoe",
+    domain: "crusoe.ai",
+    industry: "AI Cloud & Data Centers",
+    description: "Builds AI data centers and offers GPU cloud computing for training and running AI models."
+  },
+  "Lightning AI": {
+    name: "Lightning AI",
+    domain: "lightning.ai",
+    industry: "AI Cloud & Development Platform",
+    description: "Maker of PyTorch Lightning, offering a platform and cloud GPUs for building, training and deploying AI models."
+  },
+  "Deepgram": {
+    name: "Deepgram",
+    domain: "deepgram.com",
+    industry: "Voice AI",
+    description: "Speech recognition and text-to-speech APIs for building voice applications and agents."
+  },
+  "AssemblyAI": {
+    name: "AssemblyAI",
+    domain: "assemblyai.com",
+    industry: "Speech AI",
+    description: "Speech-to-text and audio understanding APIs for developers."
+  },
+  "Labelbox": {
+    name: "Labelbox",
+    domain: "labelbox.com",
+    industry: "AI Data Labeling",
+    description: "Platform and services for creating labeled data and evaluation sets used to train AI models."
+  },
+  "Supabase": {
+    name: "Supabase",
+    domain: "supabase.com",
+    industry: "Open-Source Database Platform",
+    description: "Open-source Postgres development platform with a database, authentication, storage and vector search for building apps."
+  },
+  "Decagon": {
+    name: "Decagon",
+    domain: "decagon.ai",
+    industry: "Customer Service AI Agents",
+    description: "Builds AI agents that handle customer support conversations for companies."
+  },
+  "OpenEvidence": {
+    name: "OpenEvidence",
+    domain: "openevidence.com",
+    industry: "Healthcare AI",
+    description: "AI search and reference tool that answers clinical questions for medical professionals using published medical literature."
+  },
+  "Mercor": {
+    name: "Mercor",
+    domain: "mercor.com",
+    industry: "AI Hiring Marketplace",
+    description: "AI-powered hiring marketplace that matches professionals with companies, including work that trains AI models."
+  },
+  "Agility Robotics": {
+    name: "Agility Robotics",
+    domain: "agilityrobotics.com",
+    industry: "Humanoid Robotics",
+    description: "Builds Digit, a bipedal humanoid robot for moving totes and other work in warehouses and logistics."
+  },
+  "Apptronik": {
+    name: "Apptronik",
+    domain: "apptronik.com",
+    industry: "Humanoid Robotics",
+    description: "Builds general-purpose humanoid robots, including Apollo, for industrial and logistics work."
+  },
+  "1X": {
+    name: "1X",
+    domain: "1x.tech",
+    industry: "Humanoid Robotics",
+    description: "Robotics company building humanoid robots, including NEO, for use in homes."
+  },
+  "Skydio": {
+    name: "Skydio",
+    domain: "skydio.com",
+    industry: "Autonomous Drones",
+    description: "Makes autonomous drones with onboard AI for public safety, defense, inspection and other uses."
+  },
+  "Anduril": {
+    name: "Anduril",
+    domain: "anduril.com",
+    industry: "Autonomous Defense Systems",
+    description: "Defense technology company building autonomous systems, sensors and software for military customers."
+  },
+  "Shield AI": {
+    name: "Shield AI",
+    domain: "shield.ai",
+    industry: "Autonomous Aircraft & AI Pilots",
+    description: "Defense technology company building AI pilot software and autonomous aircraft."
+  },
+  "Chroma": {
+    name: "Chroma",
+    domain: "trychroma.com",
+    industry: "Vector Databases",
+    description: "Open-source search and retrieval database for AI applications."
   }
 };
 
