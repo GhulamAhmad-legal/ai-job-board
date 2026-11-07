@@ -15,6 +15,7 @@ import {
 } from '../../lib/landingPages';
 import { getLandingData, getLandingCounts, SHOW_JOBS } from '../../lib/landingData';
 import { locationWithMore } from '../../lib/locationLabel';
+import { fitTitle } from '../../lib/titleFit';
 
 export const revalidate = 3600;
 export const dynamicParams = false; // only the slugs in landingPages.ts exist; anything else is a 404
@@ -38,7 +39,15 @@ export async function generateMetadata({
   const count = data?.count ?? 0;
   const top = (data?.topCompanies ?? []).slice(0, 3).map((c) => c.name);
 
-  const title = `${landingHeading(lp)} | ${siteConfig.name}`;
+  // The open-role count in the title gives searchers a reason to click, and it refreshes hourly.
+  const heading = landingHeading(lp);
+  const counted = count >= MIN_JOBS ? ` – ${count.toLocaleString()} Open Roles` : '';
+  const title = fitTitle([
+    `${heading}${counted} | ${siteConfig.name}`,
+    `${heading}${counted}`,
+    `${heading} | ${siteConfig.name}`,
+    heading,
+  ]);
   const description = (
     `Browse ${count.toLocaleString()} ${landingNoun(lp)}` +
     (top.length ? ` at ${joinList(top)} and more.` : '.') +

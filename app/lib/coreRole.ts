@@ -20,6 +20,14 @@ const TECHNICAL = /\b(engineer|engineering|developer|software|scientist|research
 
 export function isCoreRole(title: string): boolean {
   const t = String(title ?? '');
+
+  // A title that STARTS with a technical job ("Software Engineer, Operator", "Data Scientist, Growth
+  // Marketing") is a core role even when the part after the comma names a product or team that
+  // contains a non-core word. Titles like "Technical Recruiter, AI" still fail: their first part
+  // contains the non-core word itself.
+  const head = t.split(/\s[-–—]\s|[,(|:/]/)[0];
+  if (TECHNICAL.test(head) && !ALWAYS_NON_CORE.test(head)) return true;
+
   if (ALWAYS_NON_CORE.test(t)) return false;
   if (SOFT_NON_CORE.test(t) && !TECHNICAL.test(t)) return false;
   return true;

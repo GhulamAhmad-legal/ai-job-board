@@ -7,6 +7,10 @@ import type { Metadata } from 'next';
 import { getCompanyMeta } from '../../lib/companiesData';
 import { jobPath } from '../../lib/jobSlug';
 import { locationWithMore } from '../../lib/locationLabel';
+import { getSiteUrl } from '../../lib/siteUrl';
+import { fitTitle } from '../../lib/titleFit';
+import { joinList } from '../../lib/landingPages';
+import { summarizeListings } from '../../lib/listingStats';
 
 export const revalidate = 3600;
 
@@ -25,6 +29,7 @@ type JobRow = {
   salary_max: number | null;
   company_logo_url: string | null;
   group_size: number | null;
+  tags: unknown;
 };
 
 const SHOW_JOBS = 100; // newest roles listed on the page (the total is still shown)
@@ -59,7 +64,7 @@ async function fetchCompanyJobs(name: string): Promise<JobRow[]> {
   for (let from = 0; from < 10000; from += pageSize) {
     const { data, error } = await supabase
       .from('jobs')
-      .select('id, seq, title, company, location, salary_min, salary_max, company_logo_url, group_size')
+      .select('id, seq, title, company, location, salary_min, salary_max, company_logo_url, group_size, tags')
       .ilike('company', safeName)
       .eq('status', 'active')
       .eq('is_primary', true)
@@ -94,8 +99,18 @@ export async function generateMetadata({
   const canonicalName = found[0].company;
   const meta = readMeta(canonicalName);
 
-  const title = `${canonicalName} Careers and Open Roles | ${siteConfig.name}`;
-  const description = clip(`${canonicalName} open roles on ${siteConfig.name}. ${meta.description}`, 158);
+  const title = fitTitle([
+    `${canonicalName} Careers and Open Roles | ${siteConfig.name}`,
+    `${canonicalName} Careers and Open Roles`,
+    `${canonicalName} Careers | ${siteConfig.name}`,
+    `${canonicalName} Careers`,
+  ]);
+  const foundSummary = summarizeListings(found);
+  const lead =
+    foundSummary.topTitles.length > 0
+      ? `${found.length.toLocaleString()} open ${canonicalName} roles, including ${joinList(foundSummary.topTitles.slice(0, 3).map((t) => t.name))}.`
+      : `${found.length.toLocaleString()} open ${canonicalName} ${found.length === 1 ? 'role' : 'roles'}.`;
+  const description = clip(`${lead} ${meta.description}`, 158);
   const path = `/companies/${encodeURIComponent(canonicalName)}`;
 
   return {
@@ -124,8 +139,54 @@ export default async function CompanyPage({
   const hasRealDomain = !!meta.domain && meta.domain !== 'unknown.com';
   const logoUrl = hasRealDomain ? `https://unavatar.io/${meta.domain}` : jobs[0].company_logo_url || '';
 
+  // Facts about this employer's listings, all computed from them.
+  const summary = summarizeListings(jobs);
+  const withCount = (rows: { name: string; count: number }[]) =>
+    joinList(rows.map((r) => `${r.name} (${r.count.toLocaleString()})`));
+  const findings: string[] = [];
+  if (summary.topTitles.length > 0) {
+    findings.push(`The most common role titles are ${withCount(summary.topTitles)}.`);
+  }
+  if (summary.topPlaces.length > 0) {
+    findings.push(`Most on-site and hybrid openings are in ${withCount(summary.topPlaces)}.`);
+  }
+  if (summary.remotePct >= 10) {
+    findings.push(`${summary.remotePct}% of the roles are fully remote.`);
+  }
+  findings.push(
+    summary.payPct > 0
+      ? `${summary.payPct}% of the listings state a pay range${
+          summary.usPay
+            ? `, and the median posted range for US roles is $${summary.usPay.minMedian}K – $${summary.usPay.maxMedian}K per year (from ${summary.usPay.listings.toLocaleString()} listings)`
+            : ''
+        }.`
+      : 'None of the listings state a pay range.'
+  );
+  const tiles = [
+    { label: 'Open roles', value: jobs.length.toLocaleString() },
+    { label: 'Fully remote', value: `${summary.remotePct}%` },
+    { label: 'State pay', value: `${summary.payPct}%` },
+    ...(summary.aiPct > 0 ? [{ label: 'AI-titled', value: `${summary.aiPct}%` }] : []),
+    ...(summary.usPay ? [{ label: 'Median US pay', value: `$${summary.usPay.minMedian}K–$${summary.usPay.maxMedian}K` }] : []),
+  ];
+
+  const baseUrl = getSiteUrl();
+  const breadcrumbs = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${baseUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Companies', item: `${baseUrl}/companies` },
+      { '@type': 'ListItem', position: 3, name: companyName, item: `${baseUrl}/companies/${encodeURIComponent(companyName)}` },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-[#F5F6F8] font-sans pb-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs).replace(/</g, '\\u003c') }}
+      />
       <div className="max-w-[800px] mx-auto px-4 pt-6">
         <Link
           href="/companies"
@@ -154,7 +215,7 @@ export default async function CompanyPage({
 
             <div>
               <h1 className="text-[32px] font-extrabold text-gray-900 leading-tight tracking-tight">
-                {companyName}
+                {companyName} Careers
               </h1>
               <p className="text-[14px] font-bold text-indigo-700 mt-1">{meta.industry}</p>
               <p className="text-[15px] text-gray-600 leading-relaxed mt-3">{meta.description}</p>
@@ -164,6 +225,27 @@ export default async function CompanyPage({
             </div>
           </div>
         </div>
+
+        {jobs.length >= 3 && (
+          <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8 mb-6">
+            <h2 className="text-[18px] font-extrabold text-gray-900 mb-4">
+              Hiring at {companyName} at a glance
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              {tiles.map((t) => (
+                <div key={t.label} className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                  <div className="text-[20px] leading-tight font-black text-gray-900">{t.value}</div>
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">{t.label}</div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-5 text-[15px] text-gray-600 leading-relaxed">{findings.join(' ')}</p>
+            <p className="mt-3 text-[13px] text-gray-400">
+              Based on the {jobs.length.toLocaleString()} open roles listed below, taken from {companyName}’s own career
+              page. Apply on the employer’s site.
+            </p>
+          </section>
+        )}
 
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">

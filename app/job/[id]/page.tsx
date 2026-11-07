@@ -10,10 +10,12 @@ import { getCompanyMeta } from '../../lib/companiesData';
 import { jobPath, parseJobRef } from '../../lib/jobSlug';
 import BackLink from '../../components/BackLink';
 import { shortLocation, locationWithMore } from '../../lib/locationLabel';
+import { fitTitle, clipWords } from '../../lib/titleFit';
+import { isUsOnly } from '../../lib/listingStats';
+import { shouldIndexJob } from '../../lib/coreRole';
 import { getLandingCounts } from '../../lib/landingData';
 import { MIN_JOBS, jobHubs, landingLinkLabel } from '../../lib/landingPages';
 import { getMoreFromCompany, getSimilarJobs, type RelatedJob } from '../../lib/relatedJobs';
-import { shouldIndexJob } from '../../lib/coreRole';
 
 export const revalidate = 3600;
 
@@ -72,7 +74,6 @@ export async function generateMetadata({
 
   const location = shortLocation(job.location).label;
   const cleanTitle = String(job.title).replace(/\s+/g, ' ').trim();
-  const title = `${cleanTitle} at ${job.company}${location ? ` – ${location}` : ''} | ${siteConfig.name}`;
 
   // Built from the job's own facts, so every description is unique (no employer boilerplate or requisition codes).
   const hasSalary =
@@ -86,7 +87,31 @@ export async function generateMetadata({
       : ` Pay: $${job.salary_min}K–$${job.salary_max}K per year.`
     : '';
   const remoteText = remoteRegionOf(job.location ?? '') !== null ? ' Fully remote role.' : '';
-  const description = `${cleanTitle} at ${job.company}${location ? ` in ${location}` : ''}.${remoteText}${salaryText} Read the full description and apply on the employer’s website.`;
+  const description = clipWords(
+    `${cleanTitle} at ${job.company}${location ? ` in ${location}` : ''}.${remoteText}${salaryText} See the full requirements and apply on the employer’s website.`,
+    158
+  );
+
+  // Pay is added to the title only for US jobs (the jobs table has no currency column), because a
+  // visible pay range is what makes people click a job result.
+  const payInTitle =
+    hasSalary && isUsOnly(job.location)
+      ? job.salary_min === job.salary_max
+        ? `$${job.salary_min}K`
+        : `$${job.salary_min}K–$${job.salary_max}K`
+      : '';
+  const head = `${cleanTitle} at ${job.company}`;
+  const place = location ? ` – ${location}` : '';
+  const pay = payInTitle ? ` (${payInTitle})` : '';
+  const brand = ` | ${siteConfig.name}`;
+  const title = fitTitle([
+    `${head}${place}${pay}${brand}`,
+    `${head}${place}${pay}`,
+    `${head}${place}${brand}`,
+    `${head}${place}`,
+    `${head}${brand}`,
+    head,
+  ]);
   // A role posted in several locations has one main page; the others point to it and stay out of search results.
   let canonicalPath = jobPath(job);
   let duplicate = false;
