@@ -7,13 +7,24 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 font-medium">
         {/* Popular searches: crawlable links to the biggest landing pages */}
         <div className="mb-6 flex flex-wrap justify-center gap-x-6 gap-y-2">
-          <Link href="/jobs" className="font-bold text-gray-700 hover:text-gray-900 transition">Find Jobs</Link>
+          <Link href="/jobs" className="font-bold text-gray-700 hover:text-gray-900 transition">Browse Jobs</Link>
           <Link href="/jobs/remote" className="hover:text-gray-900 transition">Remote Jobs</Link>
           <Link href="/jobs/san-francisco" className="hover:text-gray-900 transition">Jobs in San Francisco</Link>
           <Link href="/jobs/new-york" className="hover:text-gray-900 transition">Jobs in New York</Link>
           <Link href="/jobs/london" className="hover:text-gray-900 transition">Jobs in London</Link>
           <Link href="/jobs/machine-learning-engineer" className="hover:text-gray-900 transition">Machine Learning Engineer Jobs</Link>
         </div>
+        {/* Company career pages: crawlable links to the pages people search for ("<company> careers") */}
+        <div className="mb-6 flex flex-wrap justify-center gap-x-5 gap-y-2">
+          <span className="font-bold text-gray-700">Company careers:</span>
+          {['Anthropic', 'OpenAI', 'Databricks', 'Cursor', 'Notion', 'Midjourney', 'Discord', 'Harvey', 'Sierra', 'Ideogram', 'Dataiku', 'LangChain'].map((name) => (
+            <Link key={name} href={`/companies/${encodeURIComponent(name)}`} className="hover:text-gray-900 transition">
+              {name}
+            </Link>
+          ))}
+          <Link href="/companies" className="font-bold text-gray-700 hover:text-gray-900 transition">All companies →</Link>
+        </div>
+        <p>&copy; {new Date().getFullYear()} {siteConfig.name}. All rights reserved.</p>
         <div className="mt-3 flex flex-wrap justify-center gap-x-6 gap-y-2">
           <Link href="/about" className="hover:text-gray-900 transition">About</Link>
           <Link href="/companies" className="hover:text-gray-900 transition">Companies</Link>
@@ -22,7 +33,6 @@ export default function Footer() {
           <Link href="/privacy" className="hover:text-gray-900 transition">Privacy Policy</Link>
           <Link href="/terms" className="hover:text-gray-900 transition">Terms of Service</Link>
         </div>
-        <p>&copy; {new Date().getFullYear()} {siteConfig.name}. All rights reserved.</p>
       </div>
     </footer>
   );

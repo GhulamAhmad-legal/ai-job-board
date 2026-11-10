@@ -6,6 +6,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import NavTracker from './components/NavTracker';
 import { Analytics } from '@vercel/analytics/react';
+import SiteJsonLd from './components/SiteJsonLd';
 
 const siteUrl = getSiteUrl();
 
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className="bg-gray-50 text-gray-900 antialiased min-h-screen flex flex-col font-sans">
 
         <Header />
+        <SiteJsonLd />
         <NavTracker />
 
         {/* This renders whatever page the user is currently on (e.g. page.tsx) */}

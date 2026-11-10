@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import JobFeedClient from './JobFeedClient';
+import HomeIntro from './HomeIntro';
 
 export const revalidate = 3600;
 
@@ -100,5 +101,10 @@ export default async function Home() {
   const byId = new Map((rows ?? []).map((r) => [r.id, r]));
   const jobs = ids.map((id) => byId.get(id)).filter(Boolean);
 
-  return <JobFeedClient initialJobs={jobs} totalCount={count || 0} />;
-}
+     return (
+     <>
+       <JobFeedClient initialJobs={jobs} totalCount={count || 0} />
+       <HomeIntro total={count || 0} />
+     </>
+   );
+  }

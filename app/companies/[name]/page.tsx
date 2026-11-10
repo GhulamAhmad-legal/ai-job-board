@@ -11,6 +11,8 @@ import { getSiteUrl } from '../../lib/siteUrl';
 import { fitTitle } from '../../lib/titleFit';
 import { joinList } from '../../lib/landingPages';
 import { summarizeListings } from '../../lib/listingStats';
+import { companyQuestions, todayLabel } from '../../lib/faq';
+import Questions from '../../components/Questions';
 
 export const revalidate = 3600;
 
@@ -141,6 +143,7 @@ export default async function CompanyPage({
 
   // Facts about this employer's listings, all computed from them.
   const summary = summarizeListings(jobs);
+  const asOf = todayLabel();
   const withCount = (rows: { name: string; count: number }[]) =>
     joinList(rows.map((r) => `${r.name} (${r.count.toLocaleString()})`));
   const findings: string[] = [];
@@ -293,6 +296,12 @@ export default async function CompanyPage({
             })}
           </div>
         </div>
+
+        <Questions
+          title={`Common questions about ${companyName} jobs`}
+          items={companyQuestions(companyName, summary, asOf)}
+          asOf={asOf}
+        />
       </div>
     </main>
   );

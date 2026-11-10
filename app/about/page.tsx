@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { siteConfig } from '../lib/siteConfig';
+import { getSiteUrl } from '../lib/siteUrl';
+import { AUTHOR } from '../lib/blogIndex';
+import { AUTHOR_PROFILES, authorSameAs } from '../lib/authorProfile';
 
 const title = `About ${siteConfig.name} | AI & Tech Job Board`;
 const description = `${siteConfig.name} is a job board for AI and technology companies. See where the listings come from, how they are organized, and who runs the site.`;
@@ -21,8 +24,22 @@ export const metadata: Metadata = {
 };
 
 export default function About() {
+  // Who runs the site, as structured data (the same person named on the articles).
+  const person = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: AUTHOR.name,
+    jobTitle: AUTHOR.role,
+    url: `${getSiteUrl()}/about`,
+    sameAs: authorSameAs,
+  };
+
   return (
     <main className="min-h-[calc(100vh-65px)] bg-[#F5F6F8] font-sans py-12 px-4 md:py-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(person).replace(/</g, '\\u003c') }}
+      />
       <div className="max-w-[700px] mx-auto bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
 
         {/* Header */}
@@ -102,6 +119,10 @@ export default function About() {
             </a>{' '}
             or through our{' '}
             <Link href="/contact" className="text-blue-600 hover:underline font-medium">Contact page</Link>.
+            You can also find {AUTHOR.name} on{' '}
+            <a href={AUTHOR_PROFILES.linkedin} target="_blank" rel="noopener noreferrer me" className="text-blue-600 hover:underline font-medium">LinkedIn</a>{' '}
+            and{' '}
+            <a href={AUTHOR_PROFILES.github} target="_blank" rel="noopener noreferrer me" className="text-blue-600 hover:underline font-medium">GitHub</a>.
           </p>
 
           <h2 className="text-[22px] mt-10 mb-4">Transparency &amp; trust</h2>

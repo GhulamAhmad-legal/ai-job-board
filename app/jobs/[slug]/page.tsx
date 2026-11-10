@@ -16,6 +16,8 @@ import {
 import { getLandingData, getLandingCounts, SHOW_JOBS } from '../../lib/landingData';
 import { locationWithMore } from '../../lib/locationLabel';
 import { fitTitle } from '../../lib/titleFit';
+import { landingQuestions, todayLabel } from '../../lib/faq';
+import Questions from '../../components/Questions';
 
 export const revalidate = 3600;
 export const dynamicParams = false; // only the slugs in landingPages.ts exist; anything else is a 404
@@ -98,6 +100,7 @@ export default async function LandingPage({
   };
 
   const lead = topCompanies.slice(0, 3);
+  const asOf = todayLabel();
 
   // Facts that make each page different from the others, all computed from the listings.
   const withCount = (rows: { name: string; count: number }[]) =>
@@ -281,6 +284,8 @@ export default async function LandingPage({
             )}
           </div>
         )}
+
+        <Questions title={`Common questions about ${noun}`} items={landingQuestions(data, asOf)} asOf={asOf} />
 
         {(sameKind.length > 0 || otherKinds.length > 0) && (
           <div className="mt-8 bg-white border border-gray-200 rounded-2xl shadow-sm p-6">

@@ -9,6 +9,7 @@ import { siteConfig } from '../../lib/siteConfig';
 import { getSiteUrl } from '../../lib/siteUrl';
 import { jobPath } from '../../lib/jobSlug';
 import { shortLocation } from '../../lib/locationLabel';
+import { AUTHOR_PROFILES, authorSameAs } from '../../lib/authorProfile';
 
 // Published articles are built ahead of time; scheduled ones appear on their date (checked hourly).
 export const revalidate = 3600;
@@ -94,8 +95,8 @@ export default async function BlogPostPage({
     dateModified: meta.updated ?? meta.date,
     mainEntityOfPage: `${baseUrl}/blog/${meta.slug}`,
     image: [`${baseUrl}/og-default.png`],
-    author: { '@type': 'Person', name: AUTHOR.name, jobTitle: AUTHOR.role },
-    publisher: { '@type': 'Organization', name: siteConfig.name },
+    author: { '@type': 'Person', name: AUTHOR.name, jobTitle: AUTHOR.role, url: `${baseUrl}/about`, sameAs: authorSameAs },
+    publisher: { '@type': 'Organization', name: siteConfig.name, url: baseUrl },
   };
 
   return (
@@ -220,6 +221,27 @@ export default async function BlogPostPage({
             <Link href="/about" className="text-blue-600 underline">
               About page
             </Link>
+            .
+          </p>
+          <p className="mt-3 text-[14px] text-gray-600">
+            Find {AUTHOR.name} on{' '}
+            <a
+              href={AUTHOR_PROFILES.linkedin}
+              target="_blank"
+              rel="noopener noreferrer me"
+              className="text-blue-600 underline font-bold"
+            >
+              LinkedIn
+            </a>{' '}
+            and{' '}
+            <a
+              href={AUTHOR_PROFILES.github}
+              target="_blank"
+              rel="noopener noreferrer me"
+              className="text-blue-600 underline font-bold"
+            >
+              GitHub
+            </a>
             .
           </p>
           {SHOW_AI_NOTE && (
